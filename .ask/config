@@ -23,7 +23,7 @@
             "codeUri": "lambda/us-east-1_ask-custom-idk-default",
             "functionName": "ask-custom-idk-default",
             "handler": "index.handler",
-            "revisionId": "3fba45e7-f4ea-4194-8cc1-37cffd4d6aaa",
+            "revisionId": "db531270-fe5c-4b59-8cfd-6b383b33a1b2",
             "runtime": "nodejs8.10"
           }
         ]

@@ -108,7 +108,6 @@ const RecommendationsHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'RecommendationsIntent';
     },
     handle(handlerInput) {
-        // const recommendation = handlerInput.requestEnvelope.request.intent.slots.recommendation.value;
         let place = '';
         const client = yelp.client(API_KEY);
 
@@ -120,10 +119,6 @@ const RecommendationsHandler = {
                 // place = prettyJson;
                 console.log(prettyJson);
             });
-            // Original:
-            // const firstResult = response.jsonBody.businesses[0].name;
-            // const prettyJson = JSON.stringify(firstResult, null, 4);
-            // console.log(prettyJson);
             const speakOutput = `How about ${place}?`; // change to variable / slot name
             const repromptText = 'Sorry, I didn\'t catch that';
             return handlerInput.responseBuilder
