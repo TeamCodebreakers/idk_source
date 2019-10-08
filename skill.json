@@ -1,32 +1,36 @@
 {
   "manifest": {
-    "apis": {
-      "custom": {
-        "regions": {},
-        "endpoint": {
-          "uri": "ask-custom-idk-default",
-          "sourceDir": "lambda/us-east-1_ask-custom-idk-default"
-        }
-      }
-    },
-    "manifestVersion": "1.0",
     "publishingInformation": {
       "locales": {
         "en-US": {
-          "name": "idk",
           "summary": "Sample Short Description",
-          "description": "Sample Full Description",
           "examplePhrases": [
-            "Alexa open hello world",
-            "hello",
+            "Alexa open I don't know",
+            "exit",
             "help"
-          ]
+          ],
+          "name": "idk",
+          "description": "Recommends restaurants"
         }
       },
       "isAvailableWorldwide": true,
       "testingInstructions": "Sample Testing Instructions.",
       "category": "KNOWLEDGE_AND_TRIVIA",
       "distributionCountries": []
-    }
+    },
+    "apis": {
+      "custom": {
+        "endpoint": {
+          "sourceDir": "lambda/custom",
+          "uri": "ask-custom-idk-default"
+        }
+      }
+    },
+    "manifestVersion": "1.0",
+    "permissions": [
+      {
+        "name": "alexa::devices:all:address:full:read"
+      }
+    ]
   }
 }

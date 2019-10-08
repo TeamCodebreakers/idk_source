@@ -10,6 +10,16 @@ require('dotenv').config();
 const uuidv4 = require('uuid/v4');
 const dbHelper = require('./helpers/db-helper.js');
 
+//Location variables
+//location call
+const messages = {
+    NOTIFY_MISSING_PERMISSIONS: 'Please enable device location permissions in the Amazon Alexa app.',
+    NO_ADDRESS: 'It looks like you don\'t have an address set. You can set your address from the companion app.',
+    ERROR: 'Uh Oh. Looks like something went wrong.'
+  };
+  const DEVICE_LOCATION_PERMISSION = 'read::alexa:device:all:address';
+  const APP_NAME = "idk";
+
 // Yelp
 const yelp = require('yelp-fusion');
 const API_KEY = process.env.YELP_API_KEY;
@@ -51,6 +61,45 @@ const SetNameHandler = {
             .getResponse();
     }
 };
+
+//location handler
+const DeviceLocationIntentHandler = {
+    canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+        && handlerInput.requestEnvelope.request.intent.name === 'DeviceLocationIntent';
+    },
+    async handle(handlerInput) {
+      const { requestEnvelope, serviceClientFactory, responseBuilder } = handlerInput;
+      try {
+        const { deviceId } = requestEnvelope.context.System.device;
+        const deviceAddressServiceClient = serviceClientFactory.getDeviceAddressServiceClient();
+        const address = await deviceAddressServiceClient.getFullAddress(deviceId);
+        let response;
+        if (address == undefined || (address.addressLine1 === null && address.stateOrRegion === null)) {
+          response = responseBuilder.speak(messages.NO_ADDRESS).getResponse();
+          return response;
+        } else {
+          const completeAddress = `${address.addressLine1}, ${address.stateOrRegion}, ${address.postalCode}`;
+          const response = `Your complete address is, ${completeAddress}`;
+          return handlerInput.responseBuilder
+              .speak(response)
+              .withSimpleCard(APP_NAME, response)
+              .getResponse();
+        }
+      } catch (error) {
+        console.log(JSON.stringify(error));
+        if (error.statusCode == 403) {
+          return responseBuilder
+          .speak(messages.NOTIFY_MISSING_PERMISSIONS)
+          .withAskForPermissionsConsentCard([DEVICE_LOCATION_PERMISSION])
+          .getResponse();
+        }
+        console.log(JSON.stringify(error));
+        const response = responseBuilder.speak(messages.ERROR).getResponse();
+        return response;
+      }
+    },
+  };
 
 // Recommendations Handler
 const RecommendationsHandler = {
@@ -204,6 +253,7 @@ exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
         SetNameHandler,
+        DeviceLocationIntentHandler,
         RecommendationsHandler,
         RecommendationsYesHandler,
         RecommendationsNoHandler,
@@ -215,4 +265,5 @@ exports.handler = Alexa.SkillBuilders.custom()
     .addErrorHandlers(
         ErrorHandler
     )
+    .withApiClient(new Alexa.DefaultApiClient())
     .lambda();
