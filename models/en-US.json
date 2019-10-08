@@ -1,149 +1,158 @@
 {
   "interactionModel": {
-    "languageModel": {
-      "invocationName": "i don't know",
-      "intents": [
-        {
-          "name": "AMAZON.CancelIntent",
-          "samples": []
-        },
-        {
-          "name": "AMAZON.HelpIntent",
-          "samples": []
-        },
-        {
-          "name": "AMAZON.StopIntent",
-          "samples": [
-            "I'm done",
-            "go away",
-            "hasta la vista",
-            "cancel holodeck",
-            "stop recommending",
-            "stop",
-            "quit",
-            "exit",
-            "Please exit",
-            "Goodbye"
-          ]
-        },
-        {
-          "name": "AMAZON.NavigateHomeIntent",
-          "samples": []
-        },
-        {
-          "name": "SetNameIntent",
-          "slots": [
-            {
-              "name": "name",
-              "type": "AMAZON.FirstName",
-              "samples": [
-                "The name is {name}",
-                "I'm {name}",
-                "I am {name}",
-                "{name}",
-                "My name is {name}"
-              ]
-            }
-          ],
-          "samples": [
-            "The name is {name}",
-            "I'm {name}",
-            "I am {name}",
-            "Update to {name}",
-            "{name}",
-            "My name is {name}"
-          ]
-        },
-        {
-          "name": "RecommendationsIntent",
-          "slots": [],
-          "samples": [
-            "please feed",
-            "please feed me",
-            "recommend some places for my tummy",
-            "recommend some places to me",
-            "Recommend some places to eat",
-            "hungry",
-            "I am Hungry",
-            "I'm hungry",
-            "food me now",
-            "food",
-            "Give me food",
-            "Recommend",
-            "Recommendations",
-            "Recommend a place"
-          ]
-        },
-        {
-          "name": "AMAZON.YesIntent",
-          "samples": [
-            "yeet",
-            "ya",
-            "si",
-            "truth",
-            "true",
-            "great",
-            "yup",
-            "okay",
-            "uh huh",
-            "yeah",
-            "yep",
-            "yes"
-          ]
-        },
-        {
-          "name": "AMAZON.NoIntent",
-          "samples": [
-            "cool your jets",
-            "negative ghost rider",
-            "negatron",
-            "no thank you",
-            "brah",
-            "negative",
-            "uh nah",
-            "nah",
-            "na",
-            "niet",
-            "nine",
-            "nope",
-            "no"
-          ]
-        }
-      ],
-      "types": []
-    },
-    "dialog": {
-      "intents": [
-        {
-          "name": "SetNameIntent",
-          "confirmationRequired": false,
-          "prompts": {},
-          "slots": [
-            {
-              "name": "name",
-              "type": "AMAZON.FirstName",
-              "elicitationRequired": true,
-              "confirmationRequired": false,
-              "prompts": {
-                "elicitation": "Elicit.Slot.838765748428.755891003946"
+      "languageModel": {
+          "invocationName": "i don't know",
+          "intents": [
+              {
+                  "name": "AMAZON.CancelIntent",
+                  "samples": []
+              },
+              {
+                  "name": "AMAZON.HelpIntent",
+                  "samples": []
+              },
+              {
+                  "name": "AMAZON.StopIntent",
+                  "samples": [
+                      "I'm done",
+                      "go away",
+                      "hasta la vista",
+                      "cancel holodeck",
+                      "stop recommending",
+                      "stop",
+                      "quit",
+                      "exit",
+                      "Please exit",
+                      "Goodbye"
+                  ]
+              },
+              {
+                  "name": "AMAZON.NavigateHomeIntent",
+                  "samples": []
+              },
+              {
+                  "name": "SetNameIntent",
+                  "slots": [
+                      {
+                          "name": "name",
+                          "type": "AMAZON.FirstName",
+                          "samples": [
+                              "The name is {name}",
+                              "I'm {name}",
+                              "I am {name}",
+                              "{name}",
+                              "My name is {name}"
+                          ]
+                      }
+                  ],
+                  "samples": [
+                      "The name is {name}",
+                      "I'm {name}",
+                      "I am {name}",
+                      "Update to {name}",
+                      "{name}",
+                      "My name is {name}"
+                  ]
+              },
+              {
+                  "name": "RecommendationsIntent",
+                  "slots": [],
+                  "samples": [
+                      "please feed",
+                      "please feed me",
+                      "recommend some places for my tummy",
+                      "recommend some places to me",
+                      "Recommend some places to eat",
+                      "hungry",
+                      "I am Hungry",
+                      "I'm hungry",
+                      "food me now",
+                      "food",
+                      "Give me food",
+                      "Recommend",
+                      "Recommendations",
+                      "Recommend a place"
+                  ]
+              },
+              {
+                  "name": "AMAZON.YesIntent",
+                  "samples": [
+                      "yeet",
+                      "ya",
+                      "si",
+                      "truth",
+                      "true",
+                      "great",
+                      "yup",
+                      "okay",
+                      "uh huh",
+                      "yeah",
+                      "yep",
+                      "yes"
+                  ]
+              },
+              {
+                  "name": "AMAZON.NoIntent",
+                  "samples": [
+                      "cool your jets",
+                      "negative ghost rider",
+                      "negatron",
+                      "no thank you",
+                      "brah",
+                      "negative",
+                      "uh nah",
+                      "nah",
+                      "na",
+                      "niet",
+                      "nine",
+                      "nope",
+                      "no"
+                  ]
+              },
+              {
+                  "name": "DeviceLocationIntent",
+                  "slots": [],
+                  "samples": [
+                      "where you at matt",
+                      "where you at",
+                      "whats my location",
+                      "location"
+                  ]
               }
-            }
-          ]
-        }
-      ],
-      "delegationStrategy": "ALWAYS"
-    },
-    "prompts": [
-      {
-        "id": "Elicit.Slot.838765748428.755891003946",
-        "variations": [
+          ],
+          "types": []
+      },
+      "dialog": {
+          "intents": [
+              {
+                  "name": "SetNameIntent",
+                  "confirmationRequired": false,
+                  "prompts": {},
+                  "slots": [
+                      {
+                          "name": "name",
+                          "type": "AMAZON.FirstName",
+                          "confirmationRequired": false,
+                          "elicitationRequired": true,
+                          "prompts": {
+                              "elicitation": "Elicit.Slot.838765748428.755891003946"
+                          }
+                      }
+                  ]
+              }
+          ],
+          "delegationStrategy": "ALWAYS"
+      },
+      "prompts": [
           {
-            "type": "PlainText",
-            "value": "What should I call you?"
+              "id": "Elicit.Slot.838765748428.755891003946",
+              "variations": [
+                  {
+                      "type": "PlainText",
+                      "value": "What should I call you?"
+                  }
+              ]
           }
-        ]
-      }
-    ]
-  },
-  "version": "1"
+      ]
+  }
 }
