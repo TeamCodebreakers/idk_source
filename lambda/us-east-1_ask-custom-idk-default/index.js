@@ -23,6 +23,7 @@ const messages = {
 // Yelp
 const yelp = require('yelp-fusion');
 const API_KEY = process.env.YELP_API_KEY;
+let location = '';
 
 // Initial handler 
 const LaunchRequestHandler = {
@@ -52,13 +53,15 @@ const SetNameHandler = {
         // dbHelper.addName(name, uuidv4() );
 
         const speakOutput = `Hey ${name}, I can recommend a place, change your personal options, or exit. What would you like to do?`;
+        const repromptText = 'I didn\'t catch that, can you say it again?';
         return handlerInput.responseBuilder
             .speak(speakOutput)
+            .reprompt(repromptText)
             .getResponse();
     }
 };
 
-//location handler
+// Location handler
 const DeviceLocationIntentHandler = {
     canHandle(handlerInput) {
       return handlerInput.requestEnvelope.request.type === 'IntentRequest'
@@ -100,36 +103,65 @@ const DeviceLocationIntentHandler = {
 // Recommendations Handler
 const RecommendationsHandler = {
     canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'RecommendationsIntent';
+      return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+        && handlerInput.requestEnvelope.request.intent.name === 'RecommendationsIntent';
     },
-    handle(handlerInput) {
-        const searchRequest = {
-            location: 'san francisco, ca'
-        };
+    async handle(handlerInput) {
+      const { requestEnvelope, serviceClientFactory, responseBuilder } = handlerInput;
+      try {
+        const { deviceId } = requestEnvelope.context.System.device;
+        const deviceAddressServiceClient = serviceClientFactory.getDeviceAddressServiceClient();
+        const address = await deviceAddressServiceClient.getFullAddress(deviceId);
+        let response;
+        if (address == undefined || (address.addressLine1 === null && address.stateOrRegion === null)) {
+          response = responseBuilder.speak(messages.NO_ADDRESS).getResponse();
+          return response;
+        } else {
+          const completeAddress = `${address.addressLine1}, ${address.stateOrRegion}, ${address.postalCode}`;
+          location = address.city.toLowerCase() + ', ' + address.stateOrRegion.toLowerCase();
+          let place = await searcher(location);
 
-        let place = '';
-        const client = yelp.client(API_KEY);
+          const response = `How about ${place}?`;
+          const repromptText = 'Sorry, I didn\'t catch that';
 
-        return client.search(searchRequest).then(response => {
-            let resultArr = [];
-            resultArr.push(response.jsonBody.businesses);
-            resultArr.forEach(item => {
-                place = JSON.stringify(item[0].name);
-                console.log(place);
-            });
-            const speakOutput = `How about ${place}?`; // change to variable / slot name
-            const repromptText = 'Sorry, I didn\'t catch that';
-            return handlerInput.responseBuilder
-                .speak(speakOutput)
-                .reprompt(repromptText)
-                .getResponse();
-          }).catch(e => {
-            console.log(e);
-          }
-        );
-    }
-};
+          console.log("Address city stateOrRegion:", address.city.toLowerCase() + ', ' + address.stateOrRegion.toLowerCase());
+
+          return handlerInput.responseBuilder
+              .speak(response)
+              .reprompt(repromptText)
+              .withSimpleCard(APP_NAME, response)
+              .getResponse();
+        }
+      } catch (error) {
+        console.log(JSON.stringify(error));
+        if (error.statusCode == 403) {
+          return responseBuilder
+          .speak(messages.NOTIFY_MISSING_PERMISSIONS)
+          .withAskForPermissionsConsentCard([DEVICE_LOCATION_PERMISSION])
+          .getResponse();
+        }
+        console.log(JSON.stringify(error));
+        const response = responseBuilder.speak(messages.ERROR).getResponse();
+        return response;
+      }
+    },
+  };
+
+const searcher = (location) => {
+    const client = yelp.client(API_KEY);
+
+    const searchRequest = {
+        location: location
+    };
+
+    return client.search(searchRequest).then(response => {
+        const result = response.jsonBody.businesses[0].name;
+        return result;
+      }).catch(e => {
+        console.log(e);
+      }
+    );
+}
 
 // Recommendations Response Handler
 const RecommendationsYesHandler = {
