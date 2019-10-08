@@ -24,10 +24,6 @@ const messages = {
 const yelp = require('yelp-fusion');
 const API_KEY = process.env.YELP_API_KEY;
 
-const searchRequest = {
-    location: 'san francisco, ca'
-};
-
 // Initial handler 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -108,6 +104,10 @@ const RecommendationsHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'RecommendationsIntent';
     },
     handle(handlerInput) {
+        const searchRequest = {
+            location: 'san francisco, ca'
+        };
+
         let place = '';
         const client = yelp.client(API_KEY);
 
