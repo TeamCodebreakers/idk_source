@@ -108,33 +108,27 @@ const RecommendationsHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'RecommendationsIntent';
     },
     handle(handlerInput) {
-        // const recommendation = handlerInput.requestEnvelope.request.intent.slots.recommendation.value;
         let place = '';
         const client = yelp.client(API_KEY);
 
-        client.search(searchRequest).then(response => {
+        return client.search(searchRequest).then(response => {
             let resultArr = [];
             resultArr.push(response.jsonBody.businesses);
             resultArr.forEach(item => {
-                const prettyJson = JSON.stringify(item[0].name, null, 4);
-                place = prettyJson;
+                place = JSON.stringify(item[0].name);
+                // place = prettyJson;
                 console.log(prettyJson);
             });
-            // Original:
-            // const firstResult = response.jsonBody.businesses[0].name;
-            // const prettyJson = JSON.stringify(firstResult, null, 4);
-            // console.log(prettyJson);
+            const speakOutput = `How about ${place}?`; // change to variable / slot name
+            const repromptText = 'Sorry, I didn\'t catch that';
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .reprompt(repromptText)
+                .getResponse();
           }).catch(e => {
             console.log(e);
           }
         );
-
-        const speakOutput = `How about ${place}`; // change to variable / slot name
-        const repromptText = 'Sorry, I didn\'t catch that';
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt(repromptText)
-            .getResponse();
     }
 };
 
