@@ -53,7 +53,7 @@ const SetNameHandler = {
         const name = handlerInput.requestEnvelope.request.intent.slots.name.value;
         
         //set name to DB
-        dbHelper.addName(name, uuidv4() );
+        // dbHelper.addName(name, uuidv4() );
 
         const speakOutput = `Hey ${name}, I can recommend a place, change your personal options, or exit. What would you like to do?`;
         return handlerInput.responseBuilder
@@ -116,8 +116,7 @@ const RecommendationsHandler = {
             resultArr.push(response.jsonBody.businesses);
             resultArr.forEach(item => {
                 place = JSON.stringify(item[0].name);
-                // place = prettyJson;
-                console.log(prettyJson);
+                console.log(place);
             });
             const speakOutput = `How about ${place}?`; // change to variable / slot name
             const repromptText = 'Sorry, I didn\'t catch that';
