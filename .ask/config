@@ -1,0 +1,33 @@
+{
+  "deploy_settings": {
+    "TeamCodeBreakers": {
+      "skill_id": "amzn1.ask.skill.b423c14d-8cfa-4b4d-9251-fef5ce1b89d8",
+      "was_cloned": true,
+      "merge": {},
+      "resources": {
+        "manifest": {
+          "eTag": "9e0f2d21ac02b98bbb57ccf7d98bc226"
+        },
+        "interactionModel": {
+          "en-US": {
+            "eTag": "a2b551c6e52098ae9e07949254121700"
+          }
+        },
+        "lambda": [
+          {
+            "arn": "arn:aws:lambda:us-east-1:952291871706:function:ask-custom-idk-default",
+            "awsRegion": "us-east-1",
+            "functionName": "ask-custom-idk-default",
+            "alexaUsage": [
+              "custom/default"
+            ],
+            "revisionId": "72335f78-6de0-4110-a4f6-de941e9bb26f",
+            "codeUri": "lambda/us-east-1_ask-custom-idk-default",
+            "handler": "index.handler",
+            "runtime": "nodejs8.10"
+          }
+        ]
+      }
+    }
+  }
+}
