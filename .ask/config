@@ -28,6 +28,35 @@
           }
         ]
       }
+    },
+    "default": {
+      "skill_id": "amzn1.ask.skill.6e4c2a5e-e459-4e3b-85ac-8e51e462ae02",
+      "was_cloned": false,
+      "merge": {},
+      "resources": {
+        "manifest": {
+          "eTag": "d3f5c9c4e8e1a3f21968fd97c78dc86a"
+        },
+        "interactionModel": {
+          "en-US": {
+            "eTag": "a4391c7537ffd58efb71c78546f47380"
+          }
+        },
+        "lambda": [
+          {
+            "alexaUsage": [
+              "custom/default"
+            ],
+            "arn": "arn:aws:lambda:us-west-2:412020486946:function:ask-custom-idk-default",
+            "awsRegion": "us-west-2",
+            "codeUri": "lambda/custom",
+            "functionName": "ask-custom-idk-default",
+            "handler": "index.handler",
+            "revisionId": "7c01e850-f8e2-447c-9d66-7a1f525c5a14",
+            "runtime": "nodejs8.10"
+          }
+        ]
+      }
     }
   }
 }
