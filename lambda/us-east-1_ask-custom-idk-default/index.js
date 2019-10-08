@@ -23,7 +23,6 @@ const messages = {
 // Yelp
 const yelp = require('yelp-fusion');
 const API_KEY = process.env.YELP_API_KEY;
-let location = '';
 
 // Initial handler 
 const LaunchRequestHandler = {
@@ -117,8 +116,7 @@ const RecommendationsHandler = {
           response = responseBuilder.speak(messages.NO_ADDRESS).getResponse();
           return response;
         } else {
-          const completeAddress = `${address.addressLine1}, ${address.stateOrRegion}, ${address.postalCode}`;
-          location = address.city.toLowerCase() + ', ' + address.stateOrRegion.toLowerCase();
+          let location = address.city.toLowerCase() + ', ' + address.stateOrRegion.toLowerCase();
           let place = await searcher(location);
 
           const response = `How about ${place}?`;
@@ -155,12 +153,17 @@ const searcher = (location) => {
     };
 
     return client.search(searchRequest).then(response => {
-        const result = response.jsonBody.businesses[0].name;
+        let randomNum = randomizer(response.jsonBody.businesses.length);
+        const result = response.jsonBody.businesses[randomNum].name;
         return result;
       }).catch(e => {
         console.log(e);
       }
     );
+}
+
+const randomizer = max => {
+    return Math.floor(Math.random() * max);
 }
 
 // Recommendations Response Handler
