@@ -146,23 +146,20 @@ const RecommendationsYesHandler = {
     },
     handle(handlerInput) {
         // const recommendationResponse = handlerInput.requestEnvelope.request.intent.slots.recommendationResponse.value;
-
-            const speakOutput = `A message is being sent to the people in your group`; // change to variable / slot name
-            return handlerInput.responseBuilder
-                .speak(speakOutput)
-                .getResponse();
+        const speakOutput = `A message is being sent to the people in your group`; // change to variable / slot name
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .getResponse();
     }
 };
 
 const RecommendationsNoHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent';
-            
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent';  
     },
     handle(handlerInput) {
-
-            return RecommendationsHandler.handle(handlerInput);
+        return RecommendationsHandler.handle(handlerInput);
     }
 };
 
