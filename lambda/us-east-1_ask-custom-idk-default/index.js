@@ -35,40 +35,56 @@ const LaunchRequestHandler = {
         return handlerInput.requestEnvelope.request.type === 'LaunchRequest';
     },
     async handle(handlerInput) {
-        const attributesManager = handlerInput.attributesManager;
-        const sessionAttributes = await attributesManager.getSessionAttributes() || {};
-        const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
-        console.log("LaunchRequestHandler handle() group:", group);
-        let speakOutput;
-        if (group) {
-            speakOutput = `Welcome back, ${group}`;            
-        } else {
-            speakOutput = 'Welcome to I Don\'t Know, where I recommend places to eat. Can I get your name?';
+        const { serviceClientFactory, responseBuilder } = handlerInput;
+        try {
+          const upsServiceClient = serviceClientFactory.getUpsServiceClient();
+          const profileName = await upsServiceClient.getProfileName();
+          
+          const attributesManager = handlerInput.attributesManager;
+          const sessionAttributes = attributesManager.getSessionAttributes() || {};
+          const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
+          let speakOutput;
+          if (group) {
+              speakOutput = `Welcome back, ${profileName}, can I recommend a place?`;
+          } else {
+              speakOutput = `Hey ${profileName}, Welcome to I Don\'t Know, I can recommend a place, create or add you to a group, check your device location, or exit. What would you like?`;
+          }
+          const repromptText = 'Sorry, I didn\'t catch that.';
+          
+          return handlerInput.responseBuilder
+              .speak(speakOutput)
+              .withSimpleCard(APP_NAME, speakOutput)
+              .reprompt(repromptText)
+              .getResponse();
+        } catch (error) {
+
+            const speakOutput = `Welcome to I Don\'t Know, where I recommend places to eat. Can I get your name?`;
+            const repromptText = 'Sorry, I didn\'t catch that.';
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .withSimpleCard(APP_NAME, speakOutput)
+                .reprompt(repromptText)
+                .getResponse();
         }
-        const repromptText = 'Sorry, I didn\'t catch your name, what\'s your name?';
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt(repromptText)
-            .getResponse();
     }
 };
 
 // Accepts User's name 
-const SetNameHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'SetNameIntent';
-    },
-    handle(handlerInput) {
-        const name = handlerInput.requestEnvelope.request.intent.slots.name.value;
-        const speakOutput = `Hey ${name}, I can recommend a place, create or add you to a group, check your device location, or exit. What would you like?`;
-        const repromptText = 'I didn\'t catch that, can you say it again?';
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt(repromptText)
-            .getResponse();
-    }
-};
+// const SetNameHandler = {
+//     canHandle(handlerInput) {
+//         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+//             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'SetNameIntent';
+//     },
+//     handle(handlerInput) {
+//         const name = handlerInput.requestEnvelope.request.intent.slots.name.value;
+//         const speakOutput = `Hey ${name}, I can recommend a place, create or add you to a group, check your device location, or exit. What would you like?`;
+//         const repromptText = 'I didn\'t catch that, can you say it again?';
+//         return handlerInput.responseBuilder
+//             .speak(speakOutput)
+//             .reprompt(repromptText)
+//             .getResponse();
+//     }
+// };
 
 //mobile number from profile
 const ProfileMobileIntentHandler = {
@@ -383,7 +399,7 @@ exports.handler = Alexa.SkillBuilders.custom()
     )
     .addRequestHandlers(
         LaunchRequestHandler,
-        SetNameHandler,
+//         SetNameHandler,
         ProfileMobileIntentHandler,
         ProfileNameIntentHandler,
         DeviceLocationIntentHandler,
