@@ -6,12 +6,7 @@
 const Alexa = require('ask-sdk-core');
 require('dotenv').config();
 
-//trial solution for dynamoDB
-const uuidv4 = require('uuid/v4');
-const dbHelper = require('./helpers/db-helper.js');
-
-//Location variables
-//location call
+//Location call
 const messages = {
     NOTIFY_MISSING_PERMISSIONS: 'Please enable device location permissions in the Amazon Alexa app.',
     NO_ADDRESS: 'It looks like you don\'t have an address set. You can set your address from the companion app.',
@@ -20,7 +15,7 @@ const messages = {
   const DEVICE_LOCATION_PERMISSION = 'read::alexa:device:all:address';
   const APP_NAME = "idk";
 
-// Yelp
+//Yelp
 const yelp = require('yelp-fusion');
 const API_KEY = process.env.YELP_API_KEY;
 
@@ -30,8 +25,8 @@ const LaunchRequestHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const speakOutput = 'Welcome to I Don\'t Know, where I recommend places to eat. Before we go any further, can I get your name?';
-        const repromptText = 'Sorry, I didn\'t catch your name, what is your name?';
+        const speakOutput = 'Welcome to I Don\'t Know, where I recommend places to eat. Can I get your name?';
+        const repromptText = 'Sorry, I didn\'t catch your name, what\'s your name?';
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(repromptText)
@@ -47,11 +42,7 @@ const SetNameHandler = {
     },
     handle(handlerInput) {
         const name = handlerInput.requestEnvelope.request.intent.slots.name.value;
-        
-        //set name to DB
-        // dbHelper.addName(name, uuidv4() );
-
-        const speakOutput = `Hey ${name}, I can recommend a place, change your personal options, or exit. What would you like to do?`;
+        const speakOutput = `Hey ${name}, I can recommend a place, change your options, check your device location, or exit. What would you like?`;
         const repromptText = 'I didn\'t catch that, can you say it again?';
         return handlerInput.responseBuilder
             .speak(speakOutput)
@@ -112,18 +103,14 @@ const RecommendationsHandler = {
         const deviceAddressServiceClient = serviceClientFactory.getDeviceAddressServiceClient();
         const address = await deviceAddressServiceClient.getFullAddress(deviceId);
         let response;
-        if (address == undefined || (address.addressLine1 === null && address.stateOrRegion === null)) {
+        if (address == undefined || (address.city === null && address.stateOrRegion === null)) {
           response = responseBuilder.speak(messages.NO_ADDRESS).getResponse();
           return response;
         } else {
           let location = address.city.toLowerCase() + ', ' + address.stateOrRegion.toLowerCase();
           let place = await searcher(location);
-
           const response = `How about ${place}?`;
           const repromptText = 'Sorry, I didn\'t catch that';
-
-          console.log("Address city stateOrRegion:", address.city.toLowerCase() + ', ' + address.stateOrRegion.toLowerCase());
-
           return handlerInput.responseBuilder
               .speak(response)
               .reprompt(repromptText)
@@ -147,7 +134,6 @@ const RecommendationsHandler = {
 
 const searcher = (location) => {
     const client = yelp.client(API_KEY);
-
     const searchRequest = {
         location: location
     };
@@ -173,7 +159,7 @@ const RecommendationsYesHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent';
     },
     handle(handlerInput) {
-        // const recommendationResponse = handlerInput.requestEnvelope.request.intent.slots.recommendationResponse.value;
+        // TODO: SNS integration (JACK AND MEL)
         const speakOutput = `A message is being sent to the people in your group`; // change to variable / slot name
         return handlerInput.responseBuilder
             .speak(speakOutput)
@@ -191,7 +177,6 @@ const RecommendationsNoHandler = {
     }
 };
 
-
 //help
 const HelpIntentHandler = {
     canHandle(handlerInput) {
@@ -199,8 +184,7 @@ const HelpIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
     },
     handle(handlerInput) {
-        const speakOutput = 'I can recommend a place, change options, or exit. How can I help?';
-
+        const speakOutput = 'I can recommend a place, change options, check your device location, or exit. How can I help?';
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)

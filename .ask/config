@@ -6,7 +6,7 @@
       "merge": {},
       "resources": {
         "manifest": {
-          "eTag": "44a4bc8728f3cf5d2a00fbcaacf2b111"
+          "eTag": "e9aea73fe1b8adf65df1909edc85b2e4"
         },
         "interactionModel": {
           "en-US": {
@@ -23,7 +23,7 @@
             "codeUri": "lambda/us-east-1_ask-custom-idk-default",
             "functionName": "ask-custom-idk-default",
             "handler": "index.handler",
-            "revisionId": "2c3dd97b-20fc-4b14-8fd8-cc19dc3880e7",
+            "revisionId": "313c7281-e5fe-4a50-95ae-bfd4b949b9aa",
             "runtime": "nodejs8.10"
           }
         ]
