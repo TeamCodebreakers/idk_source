@@ -53,35 +53,6 @@ const LaunchRequestHandler = {
     }
 };
 
-// const HasGroupLaunchRequestHandler = {
-//     canHandle(handlerInput) {
-//         const attributesManager = handlerInput.attributesManager;
-//         const sessionAttributes = attributesManager.getSessionAttributes() || {};
-
-//         const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
-
-//         console.log("HasGroupLaunchRequestHandler group:", group);
-
-//         return handlerInput.requestEnvelope.request.type === 'LaunchRequest' && group;
-//     },
-//     async handle(handlerInput) {
-//         const attributesManager = handlerInput.attributesManager;
-//         const sessionAttributes = attributesManager.getSessionAttributes() || {};
-//         const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
-//         // LOG
-//         console.log("Group", group);
-//         let speakOutput;
-//         if (group) {
-//             speakOutput = `Welcome back, your group is: ${group}`;
-//         } else {
-//             speakOutput = 'No group found';
-//         }
-//         return handlerInput.responseBuilder
-//             .speak(speakOutput)
-//             .getResponse;
-//     }
-// }
-
 // Accepts User's name 
 const SetNameHandler = {
     canHandle(handlerInput) {
@@ -412,7 +383,6 @@ exports.handler = Alexa.SkillBuilders.custom()
     )
     .addRequestHandlers(
         LaunchRequestHandler,
-        // HasGroupLaunchRequestHandler,
         SetNameHandler,
         ProfileMobileIntentHandler,
         ProfileNameIntentHandler,
