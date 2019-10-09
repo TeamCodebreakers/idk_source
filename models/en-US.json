@@ -31,30 +31,6 @@
                   "samples": []
               },
               {
-                  "name": "SetNameIntent",
-                  "slots": [
-                      {
-                          "name": "name",
-                          "type": "AMAZON.FirstName",
-                          "samples": [
-                              "The name is {name}",
-                              "I'm {name}",
-                              "I am {name}",
-                              "{name}",
-                              "My name is {name}"
-                          ]
-                      }
-                  ],
-                  "samples": [
-                      "The name is {name}",
-                      "I'm {name}",
-                      "I am {name}",
-                      "Update to {name}",
-                      "{name}",
-                      "My name is {name}"
-                  ]
-              },
-              {
                   "name": "RecommendationsIntent",
                   "slots": [],
                   "samples": [
@@ -156,38 +132,6 @@
               }
           ],
           "types": []
-      },
-      "dialog": {
-          "intents": [
-              {
-                  "name": "SetNameIntent",
-                  "confirmationRequired": false,
-                  "prompts": {},
-                  "slots": [
-                      {
-                          "name": "name",
-                          "type": "AMAZON.FirstName",
-                          "confirmationRequired": false,
-                          "elicitationRequired": true,
-                          "prompts": {
-                              "elicitation": "Elicit.Slot.838765748428.755891003946"
-                          }
-                      }
-                  ]
-              }
-          ],
-          "delegationStrategy": "ALWAYS"
-      },
-      "prompts": [
-          {
-              "id": "Elicit.Slot.838765748428.755891003946",
-              "variations": [
-                  {
-                      "type": "PlainText",
-                      "value": "What should I call you?"
-                  }
-              ]
-          }
-      ]
+      }
   }
 }
