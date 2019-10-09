@@ -45,8 +45,10 @@ const LaunchRequestHandler = {
           const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
           let speakOutput;
           if (group) {
-              speakOutput = `Welcome back, ${profileName}, can I recommend a place?`;
+              speakOutput = `Welcome back, ${profileName}, can I recommend a place, add you to a group, check your location, or exit?`;
           } else {
+            //   Creates the group in s3
+              setGroup(handlerInput, profileName);
               speakOutput = `Hey ${profileName}, Welcome to I Don\'t Know, I can recommend a place, create or add you to a group, check your device location, or exit. What would you like?`;
           }
           const repromptText = 'Sorry, I didn\'t catch that.';
@@ -68,23 +70,6 @@ const LaunchRequestHandler = {
         }
     }
 };
-
-// Accepts User's name 
-// const SetNameHandler = {
-//     canHandle(handlerInput) {
-//         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-//             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'SetNameIntent';
-//     },
-//     handle(handlerInput) {
-//         const name = handlerInput.requestEnvelope.request.intent.slots.name.value;
-//         const speakOutput = `Hey ${name}, I can recommend a place, create or add you to a group, check your device location, or exit. What would you like?`;
-//         const repromptText = 'I didn\'t catch that, can you say it again?';
-//         return handlerInput.responseBuilder
-//             .speak(speakOutput)
-//             .reprompt(repromptText)
-//             .getResponse();
-//     }
-// };
 
 //mobile number from profile
 const ProfileMobileIntentHandler = {
@@ -147,7 +132,6 @@ const ProfileNameIntentHandler = {
       try {
         const upsServiceClient = serviceClientFactory.getUpsServiceClient();
         const profileName = await upsServiceClient.getProfileName();
-        setGroup(handlerInput, profileName);
         const speechResponse = `Hello, ${profileName}`;
         return responseBuilder
                         .speak(speechResponse)
@@ -301,7 +285,7 @@ const HelpIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
     },
     handle(handlerInput) {
-        const speakOutput = 'I can recommend a place, change options, check your device location, or exit. How can I help?';
+        const speakOutput = 'I can recommend a place, add you to a group, check your device location, check your name, check your phone number, or exit. How can I help?';
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
@@ -399,7 +383,6 @@ exports.handler = Alexa.SkillBuilders.custom()
     )
     .addRequestHandlers(
         LaunchRequestHandler,
-//         SetNameHandler,
         ProfileMobileIntentHandler,
         ProfileNameIntentHandler,
         DeviceLocationIntentHandler,
