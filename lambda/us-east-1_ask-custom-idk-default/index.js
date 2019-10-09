@@ -4,6 +4,7 @@
 //held by account: team code breakers
 
 const Alexa = require('ask-sdk-core');
+const persistenceAdapter = require('ask-sdk-s3-persistence-adapter');
 require('dotenv').config();
 
 //Location call
@@ -40,9 +41,20 @@ const SetNameHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'SetNameIntent';
     },
-    handle(handlerInput) {
+    // TODO: TESTING PERSISTENCE
+    async handle(handlerInput) {
         const name = handlerInput.requestEnvelope.request.intent.slots.name.value;
-        const speakOutput = `Hey ${name}, I can recommend a place, change your options, check your device location, or exit. What would you like?`;
+
+        // START TEST CODE
+        const attributesManager = handlerInput.attributesManager;
+        let groupAttribute = {
+            "group": name
+        };
+        attributesManager.setPersistentAttributes(groupAttribute);
+        await attributesManager.savePersistentAttributes();
+        // END TEST CODE
+
+        const speakOutput = `Hey ${name}, I can recommend a place, create or add you to a group, check your device location, or exit. What would you like?`;
         const repromptText = 'I didn\'t catch that, can you say it again?';
         return handlerInput.responseBuilder
             .speak(speakOutput)
@@ -139,7 +151,7 @@ const searcher = (location) => {
     };
 
     return client.search(searchRequest).then(response => {
-        let randomNum = randomizer(response.jsonBody.businesses.length);
+        let randomNum = randomizer(response.jsonBody.businesses.length - 1);
         const result = response.jsonBody.businesses[randomNum].name;
         return result;
       }).catch(e => {
@@ -259,6 +271,8 @@ const ErrorHandler = {
 // payloads to the handlers above. Make sure any new handlers or interceptors you've
 // defined are included below. The order matters - they're processed top to bottom.
 exports.handler = Alexa.SkillBuilders.custom()
+    .withApiClient(new Alexa.DefaultApiClient())
+    .withPersistenceAdapter(new persistenceAdapter.S3PersistenceAdapter({bucketName:process.env.S3_PERSISTENCE_BUCKET}))
     .addRequestHandlers(
         LaunchRequestHandler,
         SetNameHandler,
@@ -274,5 +288,4 @@ exports.handler = Alexa.SkillBuilders.custom()
     .addErrorHandlers(
         ErrorHandler
     )
-    .withApiClient(new Alexa.DefaultApiClient())
     .lambda();
