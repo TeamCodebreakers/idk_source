@@ -27,7 +27,12 @@ const API_KEY = process.env.YELP_API_KEY;
 // Initial handler 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
+        const attributesManager = handlerInput.attributesManager;
+        const sessionAttributes = attributesManager.getSessionAttributes() || {};
+        const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
+        console.log("LaunchRequestHandler canHandle() group:", group);
+
+        return handlerInput.requestEnvelope.request.type === 'LaunchRequest';
     },
     async handle(handlerInput) {
         const { serviceClientFactory, responseBuilder } = handlerInput;
@@ -35,14 +40,22 @@ const LaunchRequestHandler = {
           const upsServiceClient = serviceClientFactory.getUpsServiceClient();
           const profileName = await upsServiceClient.getProfileName();
           
-          const speakOutput = `Hey ${profileName}, Welcome to I Don\'t Know, where I recommend places to eat`;
+          const attributesManager = handlerInput.attributesManager;
+          const sessionAttributes = attributesManager.getSessionAttributes() || {};
+          const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
+          let speakOutput;
+          if (group) {
+              speakOutput = `Welcome back, ${profileName}, can I recommend a place?`;
+          } else {
+              speakOutput = `Hey ${profileName}, Welcome to I Don\'t Know, I can recommend a place, create or add you to a group, check your device location, or exit. What would you like?`;
+          }
           const repromptText = 'Sorry, I didn\'t catch that.';
+          
           return handlerInput.responseBuilder
               .speak(speakOutput)
               .withSimpleCard(APP_NAME, speakOutput)
               .reprompt(repromptText)
               .getResponse();
-          
         } catch (error) {
 
             const speakOutput = `Welcome to I Don\'t Know, where I recommend places to eat. Can I get your name?`;
@@ -53,38 +66,25 @@ const LaunchRequestHandler = {
                 .reprompt(repromptText)
                 .getResponse();
         }
-
-
     }
 };
 
 // Accepts User's name 
-const SetNameHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'SetNameIntent';
-    },
-    // TODO: TESTING PERSISTENCE
-    async handle(handlerInput) {
-        const name = handlerInput.requestEnvelope.request.intent.slots.name.value;
-
-        // START TEST CODE
-        const attributesManager = handlerInput.attributesManager;
-        let groupAttribute = {
-            "group": name
-        };
-        attributesManager.setPersistentAttributes(groupAttribute);
-        await attributesManager.savePersistentAttributes();
-        // END TEST CODE
-
-        const speakOutput = `Hey ${name}, I can recommend a place, create or add you to a group, check your device location, or exit. What would you like?`;
-        const repromptText = 'I didn\'t catch that, can you say it again?';
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt(repromptText)
-            .getResponse();
-    }
-};
+// const SetNameHandler = {
+//     canHandle(handlerInput) {
+//         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+//             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'SetNameIntent';
+//     },
+//     handle(handlerInput) {
+//         const name = handlerInput.requestEnvelope.request.intent.slots.name.value;
+//         const speakOutput = `Hey ${name}, I can recommend a place, create or add you to a group, check your device location, or exit. What would you like?`;
+//         const repromptText = 'I didn\'t catch that, can you say it again?';
+//         return handlerInput.responseBuilder
+//             .speak(speakOutput)
+//             .reprompt(repromptText)
+//             .getResponse();
+//     }
+// };
 
 //mobile number from profile
 const ProfileMobileIntentHandler = {
@@ -126,6 +126,16 @@ const ProfileMobileIntentHandler = {
     },
 }
 
+const setGroup = (handlerInput, name) => {
+    const attributesManager = handlerInput.attributesManager;
+        let groupAttribute = {
+            "group": name
+        };
+        console.log("Group Attribute:", groupAttribute);
+        attributesManager.setPersistentAttributes(groupAttribute);
+        attributesManager.savePersistentAttributes();
+};
+
 //name  from profile
 const ProfileNameIntentHandler = {
     canHandle(handlerInput) {
@@ -137,6 +147,7 @@ const ProfileNameIntentHandler = {
       try {
         const upsServiceClient = serviceClientFactory.getUpsServiceClient();
         const profileName = await upsServiceClient.getProfileName();
+        setGroup(handlerInput, profileName);
         const speechResponse = `Hello, ${profileName}`;
         return responseBuilder
                         .speak(speechResponse)
@@ -361,15 +372,34 @@ const ErrorHandler = {
     }
 };
 
+const LoadHasGroupInterceptor = {
+    async process(handlerInput) {
+        const attributesManager = handlerInput.attributesManager;
+        const sessionAttributes = await attributesManager.getPersistentAttributes() || {};
+
+        const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
+
+        console.log("Interceptor Group:", group);
+        
+        if (group) {
+            attributesManager.setSessionAttributes(sessionAttributes);
+        }
+    }
+};
+
 // The SkillBuilder acts as the entry point for your skill, routing all request and response
 // payloads to the handlers above. Make sure any new handlers or interceptors you've
 // defined are included below. The order matters - they're processed top to bottom.
 exports.handler = Alexa.SkillBuilders.custom()
-    .withApiClient(new Alexa.DefaultApiClient())
-    .withPersistenceAdapter(new persistenceAdapter.S3PersistenceAdapter({bucketName:process.env.S3_PERSISTENCE_BUCKET}))
+    .withApiClient(
+        new Alexa.DefaultApiClient()
+    )
+    .withPersistenceAdapter(
+        new persistenceAdapter.S3PersistenceAdapter({bucketName:process.env.S3_PERSISTENCE_BUCKET})
+    )
     .addRequestHandlers(
         LaunchRequestHandler,
-        SetNameHandler,
+//         SetNameHandler,
         ProfileMobileIntentHandler,
         ProfileNameIntentHandler,
         DeviceLocationIntentHandler,
@@ -380,6 +410,9 @@ exports.handler = Alexa.SkillBuilders.custom()
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler,
         IntentReflectorHandler // make sure IntentReflectorHandler is last so it doesn't override your custom intent handlers
+    )
+    .addRequestInterceptors(
+        LoadHasGroupInterceptor
     )
     .addErrorHandlers(
         ErrorHandler
