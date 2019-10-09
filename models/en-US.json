@@ -75,6 +75,36 @@
                   ]
               },
               {
+                "name": "ProfileMobileIntent",
+                "slots": [],
+                "samples": [
+                    "whats my phone number",
+                    "phone",
+                    "check my phone number",
+                    "my phone",
+                    "check phone number",
+                    "check mobile",
+                    "mobile",
+                    "what phone number",
+                    "phone number",
+                    "number"
+                ]
+            },
+            {
+                "name": "ProfileNameIntent",
+                "slots": [],
+                "samples": [
+                    "who am I",
+                    "whats my name",
+                    "what name",
+                    "name",
+                    "what name is on this device",
+                    "name me",
+                    "who do you think I am",
+                    "what name do you have"
+                ]
+            },
+              {
                   "name": "AMAZON.YesIntent",
                   "samples": [
                       "yeet",
@@ -88,7 +118,9 @@
                       "uh huh",
                       "yeah",
                       "yep",
-                      "yes"
+                      "yes",
+                      "yes queen",
+                      "yas queen"
                   ]
               },
               {
@@ -116,7 +148,10 @@
                       "where you at matt",
                       "where you at",
                       "whats my location",
-                      "location"
+                      "location",
+                      "check my location",
+                      "check my device location",
+                      "check device location"
                   ]
               }
           ],

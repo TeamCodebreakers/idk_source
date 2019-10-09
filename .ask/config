@@ -6,11 +6,11 @@
       "merge": {},
       "resources": {
         "manifest": {
-          "eTag": "e9aea73fe1b8adf65df1909edc85b2e4"
+          "eTag": "0b1cb6a42dbf2dbcf690b0459bcbde09"
         },
         "interactionModel": {
           "en-US": {
-            "eTag": "a4391c7537ffd58efb71c78546f47380"
+            "eTag": "84f6c2e80bd1c66ee272179201e18d06"
           }
         },
         "lambda": [
@@ -23,7 +23,7 @@
             "codeUri": "lambda/us-east-1_ask-custom-idk-default",
             "functionName": "ask-custom-idk-default",
             "handler": "index.handler",
-            "revisionId": "29d98149-e6da-454f-a938-f755a2c313df",
+            "revisionId": "d127c5c8-1ed5-44ed-99cf-2020bff7e359",
             "runtime": "nodejs8.10"
           }
         ]
