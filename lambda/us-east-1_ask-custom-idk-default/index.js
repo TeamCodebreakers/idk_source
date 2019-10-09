@@ -29,13 +29,32 @@ const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
-    handle(handlerInput) {
-        const speakOutput = 'Welcome to I Don\'t Know, where I recommend places to eat. Can I get your name?';
-        const repromptText = 'Sorry, I didn\'t catch your name, what\'s your name?';
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt(repromptText)
-            .getResponse();
+    async handle(handlerInput) {
+        const { serviceClientFactory, responseBuilder } = handlerInput;
+        try {
+          const upsServiceClient = serviceClientFactory.getUpsServiceClient();
+          const profileName = await upsServiceClient.getProfileName();
+          
+          const speakOutput = `Hey ${profileName}, Welcome to I Don\'t Know, where I recommend places to eat`;
+          const repromptText = 'Sorry, I didn\'t catch that.';
+          return handlerInput.responseBuilder
+              .speak(speakOutput)
+              .withSimpleCard(APP_NAME, speakOutput)
+              .reprompt(repromptText)
+              .getResponse();
+          
+        } catch (error) {
+
+            const speakOutput = `Welcome to I Don\'t Know, where I recommend places to eat. Can I get your name?`;
+            const repromptText = 'Sorry, I didn\'t catch that.';
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .withSimpleCard(APP_NAME, speakOutput)
+                .reprompt(repromptText)
+                .getResponse();
+        }
+
+
     }
 };
 
