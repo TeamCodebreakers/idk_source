@@ -15,6 +15,10 @@ const messages = {
   const DEVICE_LOCATION_PERMISSION = 'read::alexa:device:all:address';
   const APP_NAME = "idk";
 
+//name and mobile
+const FULL_NAME_PERMISSION = "alexa::profile:name:read";
+const MOBILE_PERMISSION = "alexa::profile:mobile_number:read";
+
 //Yelp
 const yelp = require('yelp-fusion');
 const API_KEY = process.env.YELP_API_KEY;
@@ -50,6 +54,77 @@ const SetNameHandler = {
             .getResponse();
     }
 };
+
+//mobile number from profile
+const ProfileMobileIntentHandler = {
+    canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+        && handlerInput.requestEnvelope.request.intent.name === 'ProfileMobileIntent';
+    },
+    async handle(handlerInput) {
+      const { serviceClientFactory, responseBuilder } = handlerInput;
+      try {
+        const upsServiceClient = serviceClientFactory.getUpsServiceClient();
+        const profileMobileObject = await upsServiceClient.getProfileMobileNumber();
+        if (!profileMobileObject) {
+          const errorResponse = `It looks like you don\'t have a mobile number set. You can set your mobile number from the companion app.`
+          return responseBuilder
+                        .speak(errorResponse)
+                        .withSimpleCard(APP_NAME, errorResponse)
+                        .getResponse();
+        }
+        const profileMobile = profileMobileObject.phoneNumber;
+        const speechResponse = `Hello your mobile number is, <say-as interpret-as="telephone">${profileMobile}</say-as>`;
+        const cardResponse = `Hello your mobile number is, ${profileMobile}`
+        return responseBuilder
+                        .speak(speechResponse)
+                        .withSimpleCard(APP_NAME, cardResponse)
+                        .getResponse();
+      } catch (error) {
+        console.log(JSON.stringify(error));
+        if (error.statusCode == 403) {
+          return responseBuilder
+          .speak(messages.NOTIFY_MISSING_PERMISSIONS)
+          .withAskForPermissionsConsentCard([MOBILE_PERMISSION])
+          .getResponse();
+        }
+        console.log(JSON.stringify(error));
+        const response = responseBuilder.speak(messages.ERROR).getResponse();
+        return response;
+      }
+    },
+}
+
+//name  from profile
+const ProfileNameIntentHandler = {
+    canHandle(handlerInput) {
+      return handlerInput.requestEnvelope.request.type === 'IntentRequest'
+        && handlerInput.requestEnvelope.request.intent.name === 'ProfileNameIntent';
+    },
+    async handle(handlerInput) {
+      const { serviceClientFactory, responseBuilder } = handlerInput;
+      try {
+        const upsServiceClient = serviceClientFactory.getUpsServiceClient();
+        const profileName = await upsServiceClient.getProfileName();
+        const speechResponse = `Hello, ${profileName}`;
+        return responseBuilder
+                        .speak(speechResponse)
+                        .withSimpleCard(APP_NAME, speechResponse)
+                        .getResponse();
+      } catch (error) {
+        console.log(JSON.stringify(error));
+        if (error.statusCode == 403) {
+          return responseBuilder
+          .speak(messages.NOTIFY_MISSING_PERMISSIONS)
+          .withAskForPermissionsConsentCard([FULL_NAME_PERMISSION])
+          .getResponse();
+        }
+        console.log(JSON.stringify(error));
+        const response = responseBuilder.speak(messages.ERROR).getResponse();
+        return response;
+      }
+    },
+}
 
 // Location handler
 const DeviceLocationIntentHandler = {
@@ -262,6 +337,8 @@ exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
         SetNameHandler,
+        ProfileMobileIntentHandler,
+        ProfileNameIntentHandler,
         DeviceLocationIntentHandler,
         RecommendationsHandler,
         RecommendationsYesHandler,

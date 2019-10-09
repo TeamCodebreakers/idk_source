@@ -30,6 +30,12 @@
     "permissions": [
       {
         "name": "alexa::devices:all:address:full:read"
+      },
+      {
+        "name": "alexa::profile:name:read"
+      },
+      {
+        "name": "alexa::profile:mobile_number:read"
       }
     ],
     "privacyAndCompliance": {
