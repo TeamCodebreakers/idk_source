@@ -27,11 +27,9 @@ const API_KEY = process.env.YELP_API_KEY;
 // Initial handler 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
-        const attributesManager = handlerInput.attributesManager;
-        const sessionAttributes = attributesManager.getSessionAttributes() || {};
-        const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
-        console.log("LaunchRequestHandler canHandle() group:", group);
-
+        // const attributesManager = handlerInput.attributesManager;
+        // const sessionAttributes = attributesManager.getSessionAttributes() || {};
+        // const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
         return handlerInput.requestEnvelope.request.type === 'LaunchRequest';
     },
     async handle(handlerInput) {
@@ -39,18 +37,22 @@ const LaunchRequestHandler = {
         try {
           const upsServiceClient = serviceClientFactory.getUpsServiceClient();
           const profileName = await upsServiceClient.getProfileName();
-          
+          const phoneNumberObject = await upsServiceClient.getProfileMobileNumber();
+          const userPhoneNumber = phoneNumberObject.phoneNumber;  
+
           const attributesManager = handlerInput.attributesManager;
           const sessionAttributes = attributesManager.getSessionAttributes() || {};
           const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
           let speakOutput;
+
           if (group) {
-              speakOutput = `Welcome back, ${profileName}, can I recommend a place, add you to a group, check your location, or exit?`;
+              speakOutput = `Welcome back, ${profileName} your number is ${userPhoneNumber}, can I recommend a place, add you to a group, check your location, or exit?`;
           } else {
             //   Creates the group in s3
-              setGroup(handlerInput, profileName);
+              await setInitialGroup(handlerInput, profileName, userPhoneNumber);
               speakOutput = `Hey ${profileName}, Welcome to I Don\'t Know, I can recommend a place, create or add you to a group, check your device location, or exit. What would you like?`;
           }
+
           const repromptText = 'Sorry, I didn\'t catch that.';
           
           return handlerInput.responseBuilder
@@ -59,6 +61,7 @@ const LaunchRequestHandler = {
               .reprompt(repromptText)
               .getResponse();
         } catch (error) {
+            console.log('Error:', error);
 
             const speakOutput = `Welcome to I Don\'t Know, where I recommend places to eat. Can I get your name?`;
             const repromptText = 'Sorry, I didn\'t catch that.';
@@ -70,6 +73,45 @@ const LaunchRequestHandler = {
         }
     }
 };
+
+//Sets the initial group for s3
+const setInitialGroup = (handlerInput, name, phoneNumber) => {
+  const attributesManager = handlerInput.attributesManager;
+  let groupAttribute = {
+      "group": name,
+      "members": [
+        {
+          "name": name,
+          "phoneNumber": phoneNumber
+        }
+      ]
+  };
+  console.log("Group Attribute:", groupAttribute);
+  attributesManager.setPersistentAttributes(groupAttribute);
+  attributesManager.savePersistentAttributes();
+};
+
+//Updates the group with new members
+const addMemberToGroup = (handlerInput, name, phoneNumber) => {
+  const attributesManager = handlerInput.attributesManager;
+  const sessionAttributes = attributesManager.getPersistentAttributes() || {};
+  const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
+  const members = sessionAttributes.hasOwnProperty('members') ? sessionAttributes.members : 0;
+  let groupAttribute = {
+    "group": group,
+    "members": members
+  };
+  groupAttribute.members.push({
+    "name": name,
+    "phoneNumber": phoneNumber
+  });
+  attributesManager.setPersistentAttributes(groupAttribute);
+  attributesManager.savePersistentAttributes();
+}
+
+const AddGroupMemberIntentHandler = {
+
+}
 
 //mobile number from profile
 const ProfileMobileIntentHandler = {
@@ -110,16 +152,6 @@ const ProfileMobileIntentHandler = {
       }
     },
 }
-
-const setGroup = (handlerInput, name) => {
-    const attributesManager = handlerInput.attributesManager;
-        let groupAttribute = {
-            "group": name
-        };
-        console.log("Group Attribute:", groupAttribute);
-        attributesManager.setPersistentAttributes(groupAttribute);
-        attributesManager.savePersistentAttributes();
-};
 
 //name  from profile
 const ProfileNameIntentHandler = {
@@ -360,12 +392,10 @@ const LoadHasGroupInterceptor = {
     async process(handlerInput) {
         const attributesManager = handlerInput.attributesManager;
         const sessionAttributes = await attributesManager.getPersistentAttributes() || {};
-
         const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
+        const members = sessionAttributes.hasOwnProperty('members') ? sessionAttributes.members : 0;
 
-        console.log("Interceptor Group:", group);
-        
-        if (group) {
+        if (group && members) {
             attributesManager.setSessionAttributes(sessionAttributes);
         }
     }
