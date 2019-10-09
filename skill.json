@@ -31,6 +31,19 @@
       {
         "name": "alexa::devices:all:address:full:read"
       }
-    ]
+    ],
+    "privacyAndCompliance": {
+      "allowsPurchases": false,
+      "locales": {
+        "en-US": {
+          "termsOfUseUrl": "https://github.com/TeamCodebreakers/IDK/blob/dev/assets/terms.md",
+          "privacyPolicyUrl": "https://github.com/TeamCodebreakers/IDK/blob/dev/assets/privacyPolicy.md"
+        }
+      },
+      "isExportCompliant": true,
+      "containsAds": false,
+      "isChildDirected": false,
+      "usesPersonalInfo": false
+    }
   }
 }
