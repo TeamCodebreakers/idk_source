@@ -109,12 +109,12 @@ const unsubscribe = (subArn) => {
 };
 
 // Removes the member from the group
-const removeMemberFromGroup = async (handlerInput, phoneNumber, members) => {
+const removeMemberFromGroup =  (handlerInput, phoneNumber, members, sessionAttributes) => {
   const { serviceClientFactory } = handlerInput;
   const attributesManager = handlerInput.attributesManager;
 
   const upsServiceClient = serviceClientFactory.getUpsServiceClient();
-  const profileMobileObject = await upsServiceClient.getProfileMobileNumber();
+  const profileMobileObject = upsServiceClient.getProfileMobileNumber();
   let profileMobile = profileMobileObject.phoneNumber;
 
   console.log('removeMemberFromGroup(): ', members);
@@ -128,7 +128,6 @@ const removeMemberFromGroup = async (handlerInput, phoneNumber, members) => {
         members.splice(i, 1);
         break;
       }
-  
     }
     
     console.log('Returned groupAttribute:', sessionAttributes);
@@ -340,7 +339,7 @@ const RemoveGroupMemberIntentHandler = {
     const sessionAttributes = await attributesManager.getSessionAttributes() || {};
     const members = sessionAttributes.hasOwnProperty('members') ? sessionAttributes.members : 0;
 
-    const speakOutput = await removeMemberFromGroup(handlerInput, phoneNumber, members);
+    const speakOutput = await removeMemberFromGroup(handlerInput, phoneNumber, members, sessionAttributes);
     const repromptText = 'Sorry, I didn\'t catch that.  What is the phone number of the the person you want to remove?';
 
     return handlerInput.responseBuilder
