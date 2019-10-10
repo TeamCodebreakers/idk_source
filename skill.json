@@ -3,19 +3,19 @@
     "publishingInformation": {
       "locales": {
         "en-US": {
-          "summary": "Sample Short Description",
+          "summary": "Recommend restaurants from Yelp, and texts your group the address and stars.",
           "examplePhrases": [
-            "Alexa open I don't know",
-            "exit",
+            "Alexa open feed me now",
+            "recommend a place",
             "help"
           ],
-          "name": "idk",
-          "description": "Recommends restaurants"
+          "name": "feed me now",
+          "description": "Recommend restaurants from Yelp, and texts your group the address and stars"
         }
       },
       "isAvailableWorldwide": true,
-      "testingInstructions": "Sample Testing Instructions.",
-      "category": "KNOWLEDGE_AND_TRIVIA",
+      "testingInstructions": "Alexa open feed me now.",
+      "category": "RESTAURANT_BOOKING_INFO_AND_REVIEW",
       "distributionCountries": []
     },
     "apis": {
