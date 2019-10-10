@@ -408,6 +408,7 @@ const searcher = location => {
     });
 };
 
+//make a recommendation
 const randomizer = max => {
   const randomNum = Math.floor(Math.random() * max);
   return randomNum;
@@ -423,11 +424,13 @@ const RecommendationsYesHandler = {
   },
   handle(handlerInput) {
     //SNS message send
+    let message = "Name: " + resultName + ", Rating: " + resultRating + ", Address: " + resultAddress;
     // Create publish parameters
     var params = {
-      Message: `${resultName} ${resultRating} ${resultAddress}`, /* required */
+      Message: message, /* required */
       TopicArn: SNSArn
     };
+    
     // Create promise and SNS service object
     var publishTextPromise = new AWS.SNS({ apiVersion: '2019-10-07' })
       .publish(params)
