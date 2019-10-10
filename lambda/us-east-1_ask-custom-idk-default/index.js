@@ -30,7 +30,8 @@ let SNSArn = '';
 const yelp = require('yelp-fusion');
 const API_KEY = process.env.YELP_API_KEY;
 let resultName;
-let resultUrl;
+let resultAddress;
+let resultRating;
 
 // Initial handler
 const LaunchRequestHandler = {
@@ -56,7 +57,7 @@ const LaunchRequestHandler = {
       let speakOutput;
       
       if (group) {
-        speakOutput = `Welcome back, ${profileName}, can I recommend a place, add a member to your group, check your location, or exit?`;
+        speakOutput = `Welcome back, ${profileName}, Can I recommend a place? Or you can say help.`;
       } else {
         //   Creates SNS Topic
         let createTopicPromise = new AWS.SNS()
@@ -89,7 +90,7 @@ const LaunchRequestHandler = {
         .getResponse();
     } catch (error) {
       console.log('ERROR: ', error);
-      const speakOutput = `Welcome to I Don\'t Know, where I recommend places to eat. Can I get your name?`;
+      const speakOutput = `Welcome to I Don\'t Know, where I recommend places to eat. Huh, looks like I can't access the right permissions.  Open the companion app, choose our skill, and enable all.  Thanks!`;
       const repromptText = "Sorry, I didn't catch that.";
       return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -156,7 +157,7 @@ const addMemberToGroup = (handlerInput, name, phoneNumber, group, snsArn, member
   attributesManager.savePersistentAttributes();
 };
 
-// TODO: Finish Intent
+// add a member 
 const AddMemberIntentHandler = {
   canHandle(handlerInput) {
     return (
@@ -175,6 +176,7 @@ const AddMemberIntentHandler = {
   }
 }
 
+// give specific member information for the add 
 const AddGroupMemberIntentHandler = {
   canHandle(handlerInput) {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -372,6 +374,7 @@ const RecommendationsHandler = {
         return responseBuilder
           .speak(messages.NOTIFY_MISSING_PERMISSIONS)
           .withAskForPermissionsConsentCard([DEVICE_LOCATION_PERMISSION])
+          .withAskForPermissionsConsentCard([MOBILE_PERMISSION])
           .getResponse();
       }
       console.log(JSON.stringify(error));
@@ -392,7 +395,8 @@ const searcher = location => {
     .then(response => {
       let randomNum = randomizer(response.jsonBody.businesses.length - 1);
       resultName = response.jsonBody.businesses[randomNum].name;
-      resultUrl = response.jsonBody.businesses[randomNum].url;
+      resultAddress = response.jsonBody.businesses[randomNum].location.address1;
+      resultRating = response.jsonBody.businesses[randomNum].rating;
       // Alexa cannot handle the '&' and needs conversion to 'and'
       if (resultName.includes('&')) {
         resultName = resultName.replace(/&/g, 'and');
@@ -404,6 +408,7 @@ const searcher = location => {
     });
 };
 
+//make a recommendation
 const randomizer = max => {
   const randomNum = Math.floor(Math.random() * max);
   return randomNum;
@@ -419,11 +424,13 @@ const RecommendationsYesHandler = {
   },
   handle(handlerInput) {
     //SNS message send
+    let message = "Name: " + resultName + ", Rating: " + resultRating + ", Address: " + resultAddress;
     // Create publish parameters
     var params = {
-      Message: `<a href=${resultUrl}>${resultName}</a>`, /* required */
+      Message: message, /* required */
       TopicArn: SNSArn
     };
+    
     // Create promise and SNS service object
     var publishTextPromise = new AWS.SNS({ apiVersion: '2019-10-07' })
       .publish(params)
@@ -467,7 +474,7 @@ const HelpIntentHandler = {
   },
   handle(handlerInput) {
     const speakOutput =
-      'I can recommend a place, add you to a group, check your device location, check your name, check your phone number, or exit. How can I help?';
+      'I can recommend a place, add you to a group, remove you from a group, check your device location, check your name, check your phone number, or exit. How can I help?';
     return handlerInput.responseBuilder
       .speak(speakOutput)
       .reprompt(speakOutput)
