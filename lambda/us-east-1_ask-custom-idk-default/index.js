@@ -29,6 +29,8 @@ let SNSArn = '';
 //Yelp
 const yelp = require('yelp-fusion');
 const API_KEY = process.env.YELP_API_KEY;
+let resultName;
+let resultUrl;
 
 // Initial handler
 const LaunchRequestHandler = {
@@ -46,17 +48,21 @@ const LaunchRequestHandler = {
       const attributesManager = handlerInput.attributesManager;
       const sessionAttributes = attributesManager.getSessionAttributes() || {};
       const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
+      const snsArn = sessionAttributes.hasOwnProperty('snsarn') ? sessionAttributes.snsarn : 0;
+      const members = sessionAttributes.hasOwnProperty('members') ? sessionAttributes.members : 0;
+
       let speakOutput;
+
+      console.log('Group:', group);
+      console.log('Arn:', snsArn);
+      console.log('Members:', members);
       
       if (group) {
-        speakOutput = `Welcome back, ${profileName}, can I recommend a place, add you to a group, check your location, or exit?`;
+        speakOutput = `Welcome back, ${profileName}, can I recommend a place, add a member to your group, check your location, or exit?`;
       } else {
-        // TODO: Move to be able to add SNSARN for storage
-        await setInitialGroup(handlerInput, profileName, profileMobile);
-        
         //   Creates SNS Topic
-        var createTopicPromise = new AWS.SNS()
-          .createTopic({ Name: 'TOPIC_NAME' })
+        let createTopicPromise = new AWS.SNS()
+          .createTopic({ Name: profileName })
           .promise();
 
         // Handle promise's fulfilled/rejected states
@@ -64,33 +70,17 @@ const LaunchRequestHandler = {
           .then(function(data) {
             SNSArn = data.TopicArn;
             console.log('Topic ARN is ' + SNSArn);
-
-            // Subscribe
-            const sns = new AWS.SNS();
-            profileMobile = '+1' + profileMobile;
-            console.log('WE ARE SUBSCRIBING: ', profileMobile);
-            const params = {
-              Protocol: 'sms',
-              TopicArn: SNSArn,
-              Endpoint: profileMobile,
-              ReturnSubscriptionArn: true || false
-            };
-            sns.subscribe(params, function(err, data) {
-              if (err) {
-                console.log('ERR: ', err);
-              } else {
-                console.log('DATA: ', data);
-              }
-            });
-            console.log('SUBSCRIBED!');
+            return subscribe(SNSArn, profileMobile);
+          })
+          .then(() => {
+            return setInitialGroup(handlerInput, profileName, profileMobile, SNSArn);
           })
           .catch(function(err) {
             console.error(err, err.stack);
           });
 
         //   Creates the group in s3
-        setGroup(handlerInput, profileName);
-        speakOutput = `Hey ${profileName}, Welcome to I Don\'t Know, I can recommend a place, create or add you to a group, check your device location, or exit. What would you like?`;
+        speakOutput = `Hey ${profileName}, welcome to I Don\'t Know, I can recommend a place, add a member to your group, check your location, or exit. What would you like?`;
       }
       
       const repromptText = "Sorry, I didn't catch that.";
@@ -113,11 +103,34 @@ const LaunchRequestHandler = {
   }
 };
 
+// Subscribe to the SNS
+const subscribe = (snsArn, phoneNumber) => {
+  const sns = new AWS.SNS();
+    profileMobile = '+1' + phoneNumber;
+    console.log('WE ARE SUBSCRIBING: ', phoneNumber);
+    const params = {
+      Protocol: 'sms',
+      TopicArn: snsArn,
+      Endpoint: profileMobile,
+      ReturnSubscriptionArn: true || false
+    };
+    sns.subscribe(params, function(err, data) {
+      if (err) {
+        console.log('ERR: ', err);
+      } else {
+        console.log('DATA: ', data);
+      }
+    });
+    console.log('SUBSCRIBED!');
+};
+
 //Sets the initial group for s3
-const setInitialGroup = (handlerInput, name, phoneNumber) => {
+const setInitialGroup = (handlerInput, name, phoneNumber, snsArn) => {
+  console.log('SNS ARN:', snsArn);
   const attributesManager = handlerInput.attributesManager;
   let groupAttribute = {
       "group": name,
+      "snsarn": snsArn,
       "members": [
         {
           "name": name,
@@ -131,26 +144,72 @@ const setInitialGroup = (handlerInput, name, phoneNumber) => {
 };
 
 //Updates the group with new members
-const addMemberToGroup = (handlerInput, name, phoneNumber) => {
+const addMemberToGroup = (handlerInput, name, phoneNumber, group, snsArn, members) => {
   const attributesManager = handlerInput.attributesManager;
-  const sessionAttributes = attributesManager.getPersistentAttributes() || {};
-  const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
-  const members = sessionAttributes.hasOwnProperty('members') ? sessionAttributes.members : 0;
   let groupAttribute = {
     "group": group,
+    "snsarn": snsArn,
     "members": members
   };
   groupAttribute.members.push({
     "name": name,
     "phoneNumber": phoneNumber
   });
+
+  // Adds a new member to the SNS subscription
+  subscribe(snsArn, phoneNumber);
+  
+  console.log('Returned groupAttribute:', groupAttribute);
   attributesManager.setPersistentAttributes(groupAttribute);
   attributesManager.savePersistentAttributes();
+};
+
+// TODO: Finish Intent
+const AddMemberIntentHandler = {
+  canHandle(handlerInput) {
+    return (
+      handlerInput.requestEnvelope.request.type === 'IntentRequest' &&
+      handlerInput.requestEnvelope.request.intent.name === 'AddMemberIntent'
+    );
+  },
+  handle(handlerInput) {
+    const speakOutput = 'What is the first name and phone number of the the person you want to add?';
+    const repromptText = 'Sorry, I didn\'t catch that.';
+
+    return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt(repromptText)
+        .getResponse();
+  }
 }
 
 const AddGroupMemberIntentHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+        && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AddGroupMemberIntent';
+  },
+  async handle(handlerInput) {
+    const name = handlerInput.requestEnvelope.request.intent.slots.name.value;
+    const phoneNumber = handlerInput.requestEnvelope.request.intent.slots.phoneNumber.value;
 
-}
+    const attributesManager = handlerInput.attributesManager;
+    const sessionAttributes = await attributesManager.getSessionAttributes() || {};
+    const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
+    const snsArn = sessionAttributes.hasOwnProperty('snsarn') ? sessionAttributes.snsarn : 0;
+    const members = sessionAttributes.hasOwnProperty('members') ? sessionAttributes.members : 0;
+
+    addMemberToGroup(handlerInput, name, phoneNumber, group, snsArn, members);
+
+    const speakOutput = `${name} added to your group. Can I recommend a place, add another to your group, get your location, or exit?`;
+    const repromptText = 'Sorry, I didn\'t catch that.';
+
+
+    return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt(repromptText)
+        .getResponse();
+  }
+};
 
 //mobile number from profile
 const ProfileMobileIntentHandler = {
@@ -341,8 +400,13 @@ const searcher = location => {
     .search(searchRequest)
     .then(response => {
       let randomNum = randomizer(response.jsonBody.businesses.length - 1);
-      const result = response.jsonBody.businesses[randomNum].name;
-      return result;
+      resultName = response.jsonBody.businesses[randomNum].name;
+      resultUrl = response.jsonBody.businesses[randomNum].url;
+      // Alexa cannot handle the '&' and needs conversion to 'and'
+      if (resultName.includes('&')) {
+        resultName = resultName.replace(/&/g, 'and');
+      }
+      return resultName;
     })
     .catch(e => {
       console.log(e);
@@ -350,7 +414,9 @@ const searcher = location => {
 };
 
 const randomizer = max => {
-  return Math.floor(Math.random() * max);
+  const randomNum = Math.floor(Math.random() * max);
+  console.log('Random number:', randomNum);
+  return randomNum;
 };
 
 // Recommendations Response Handler
@@ -363,10 +429,9 @@ const RecommendationsYesHandler = {
   },
   handle(handlerInput) {
     //SNS message send
-
     // Create publish parameters
     var params = {
-      Message: 'MESSAGE_TEXT' /* required */,
+      Message: `<a href=${resultUrl}>${resultName}</a>`, /* required */
       TopicArn: SNSArn
     };
     // Create promise and SNS service object
@@ -497,13 +562,13 @@ const LoadHasGroupInterceptor = {
         const attributesManager = handlerInput.attributesManager;
         const sessionAttributes = await attributesManager.getPersistentAttributes() || {};
         const group = sessionAttributes.hasOwnProperty('group') ? sessionAttributes.group : 0;
+        const snsArn = sessionAttributes.hasOwnProperty('snsarn') ? sessionAttributes.snsarn : 0;
         const members = sessionAttributes.hasOwnProperty('members') ? sessionAttributes.members : 0;
 
-        if (group && members) {
+        if (group && snsArn && members) {
             attributesManager.setSessionAttributes(sessionAttributes);
         }
     }
-  }
 };
 
 // The SkillBuilder acts as the entry point for your skill, routing all request and response
@@ -524,6 +589,8 @@ exports.handler = Alexa.SkillBuilders.custom()
     RecommendationsHandler,
     RecommendationsYesHandler,
     RecommendationsNoHandler,
+    AddMemberIntentHandler,
+    AddGroupMemberIntentHandler,
     HelpIntentHandler,
     CancelAndStopIntentHandler,
     SessionEndedRequestHandler,

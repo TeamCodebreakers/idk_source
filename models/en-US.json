@@ -31,6 +31,48 @@
                   "samples": []
               },
               {
+                  "name": "AddMemberIntent",
+                  "slots": [],
+                  "samples": [
+                      "add a new member",
+                      "add my friend",
+                      "add to group",
+                      "add",
+                      "add a person",
+                      "update my group",
+                      "add member to my group",
+                      "add member",
+                      "add person",
+                      "add someone new",
+                      "add someone new to my group",
+                      "add another to my group"
+                  ]
+              },
+              {
+                "name": "AddGroupMemberIntent",
+                "slots": [
+                    {
+                        "name": "name",
+                        "type": "AMAZON.FirstName"
+                    },
+                    {
+                        "name": "phoneNumber",
+                        "type": "AMAZON.PhoneNumber"
+                    }
+                ],
+                "samples": [
+                    "add my friend {name} with {phoneNumber} to my group",
+                    "add my friend {name} with {phoneNumber}",
+                    "add my friend {name} with phone number {phoneNumber} to my group",
+                    "add my friend {name} with phone number {phoneNumber}",
+                    "add {name} at {phoneNumber} to my group",
+                    "add {name} at {phoneNumber}",
+                    "add {name} {phoneNumber} to my group",
+                    "add {name} {phoneNumber}",
+                    "{name} {phoneNumber}"
+                ]
+              },
+              {
                   "name": "RecommendationsIntent",
                   "slots": [],
                   "samples": [
