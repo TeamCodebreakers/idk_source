@@ -30,7 +30,8 @@ let SNSArn = '';
 const yelp = require('yelp-fusion');
 const API_KEY = process.env.YELP_API_KEY;
 let resultName;
-let resultUrl;
+let resultAddress;
+let resultRating;
 
 // Initial handler
 const LaunchRequestHandler = {
@@ -89,7 +90,7 @@ const LaunchRequestHandler = {
         .getResponse();
     } catch (error) {
       console.log('ERROR: ', error);
-      const speakOutput = `Welcome to I Don\'t Know, where I recommend places to eat. Can I get your name?`;
+      const speakOutput = `Welcome to I Don\'t Know, where I recommend places to eat. Huh, looks like I can't access the right permissions.  Open the companion app, choose our skill, and enable all.  Thanks!`;
       const repromptText = "Sorry, I didn't catch that.";
       return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -156,7 +157,7 @@ const addMemberToGroup = (handlerInput, name, phoneNumber, group, snsArn, member
   attributesManager.savePersistentAttributes();
 };
 
-// TODO: Finish Intent
+// add a member 
 const AddMemberIntentHandler = {
   canHandle(handlerInput) {
     return (
@@ -175,6 +176,7 @@ const AddMemberIntentHandler = {
   }
 }
 
+// give specific member information for the add 
 const AddGroupMemberIntentHandler = {
   canHandle(handlerInput) {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -372,6 +374,7 @@ const RecommendationsHandler = {
         return responseBuilder
           .speak(messages.NOTIFY_MISSING_PERMISSIONS)
           .withAskForPermissionsConsentCard([DEVICE_LOCATION_PERMISSION])
+          .withAskForPermissionsConsentCard([MOBILE_PERMISSION])
           .getResponse();
       }
       console.log(JSON.stringify(error));
@@ -392,7 +395,8 @@ const searcher = location => {
     .then(response => {
       let randomNum = randomizer(response.jsonBody.businesses.length - 1);
       resultName = response.jsonBody.businesses[randomNum].name;
-      resultUrl = response.jsonBody.businesses[randomNum].url;
+      resultAddress = response.jsonBody.businesses[randomNum].location.address1;
+      resultRating = response.jsonBody.businesses[randomNum].location.rating;
       // Alexa cannot handle the '&' and needs conversion to 'and'
       if (resultName.includes('&')) {
         resultName = resultName.replace(/&/g, 'and');
@@ -421,7 +425,7 @@ const RecommendationsYesHandler = {
     //SNS message send
     // Create publish parameters
     var params = {
-      Message: `<a href=${resultUrl}>${resultName}</a>`, /* required */
+      Message: `${resultName}, ${resultRating}, ${resultAddress}`, /* required */
       TopicArn: SNSArn
     };
     // Create promise and SNS service object
