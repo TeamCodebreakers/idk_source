@@ -1,7 +1,7 @@
 {
   "interactionModel": {
       "languageModel": {
-          "invocationName": "i don't know",
+          "invocationName": "feed me now",
           "intents": [
               {
                   "name": "AMAZON.CancelIntent",
@@ -122,7 +122,12 @@
                       "Give me food",
                       "Recommend",
                       "Recommendations",
-                      "Recommend a place"
+                      "Recommend a place",
+                      "make a recommendation",
+                      "give me a recommendation",
+                      "recommend another place",
+                      "give me another option",
+                      "give me an option"
                   ]
               },
               {
@@ -191,7 +196,9 @@
                       "nope",
                       "no",
                       "no show me something else",
-                      "no something else"
+                      "no something else",
+                      "actually no",
+                      "how about no"
                   ]
               },
               {

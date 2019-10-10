@@ -47,7 +47,8 @@ const searcher = location => {
     .then(response => {
       let randomNum = randomizer(response.jsonBody.businesses.length - 1);
       resultName = response.jsonBody.businesses[randomNum].name;
-      resultUrl = response.jsonBody.businesses[randomNum].url;
+      resultAddress = response.jsonBody.businesses[randomNum].location.address1;
+      resultRating = response.jsonBody.businesses[randomNum].rating;
       // Alexa cannot handle the '&' and needs conversion to 'and'
       if (resultName.includes('&')) {
         resultName = resultName.replace(/&/g, 'and');
@@ -65,7 +66,7 @@ const randomizer = max => {
 };
 
 // Subscribe to the SNS
-const subscribe = async (snsArn, phoneNumber) => {
+const subscribe = (snsArn, phoneNumber) => {
   let subArn;
   const sns = new AWS.SNS();
     profileMobile = '+1' + phoneNumber;
@@ -75,15 +76,19 @@ const subscribe = async (snsArn, phoneNumber) => {
       Endpoint: profileMobile,
       ReturnSubscriptionArn: true || false
     };
-    await sns.subscribe(params, function(err, data) {
-      if (err) {
-        console.log('ERR: ', err);
-      } else {
-        subArn = data.SubscriptionArn;
-        console.log('DATA: ', data);
-        return subArn;
-      }
-    });
+    return new Promise((resolve, reject)=>{
+      sns.subscribe(params, function(err, data) {
+        if (err) {
+          console.log('ERR: ', err);
+          reject(err);
+        } else {
+          subArn = data.SubscriptionArn;
+          console.log('DATA: ', data);
+          resolve(subArn);
+        }
+      });
+    })
+    
 };
 
 // Unsubscribe to the SNS
@@ -155,7 +160,7 @@ const setInitialGroup = (handlerInput, name, phoneNumber, snsArn) => {
 };
 
 //Updates the group with new members
-const addMemberToGroup = async (handlerInput, name, phoneNumber, group, snsArn, members) => {
+const addMemberToGroup = (handlerInput, name, phoneNumber, group, snsArn, members) => {
   const attributesManager = handlerInput.attributesManager;
   let groupAttribute = {
     "group": group,
@@ -163,18 +168,24 @@ const addMemberToGroup = async (handlerInput, name, phoneNumber, group, snsArn, 
     "members": members
   };
 
-  let subArn = await subscribe(snsArn, phoneNumber);
+  subscribe(snsArn, phoneNumber)
+    .then((res)=>{
+      console.log('addMemberToGroup subArn:', res);
 
-  console.log('addMemberToGroup subArn:', subArn);
+      groupAttribute.members.push({
+        "name": name,
+        "phoneNumber": phoneNumber,
+        "subscriptionArn": res
+      });
 
-  groupAttribute.members.push({
-    "name": name,
-    "phoneNumber": phoneNumber,
-    "subscriptionArn": subArn
-  });
+      attributesManager.setPersistentAttributes(groupAttribute);
+      attributesManager.savePersistentAttributes();
+    })
+    .catch((err)=>{
+      console.log("probably helpful with a string: " + err);
+    })
   
-  attributesManager.setPersistentAttributes(groupAttribute);
-  attributesManager.savePersistentAttributes();
+  
 };
 
 
@@ -217,6 +228,7 @@ const LaunchRequestHandler = {
         createTopicPromise
           .then(function(data) {
             SNSArn = data.TopicArn;
+            console.log("SNSArn at launch 231: " + SNSArn);
             return subscribe(SNSArn, profileMobile);
           })
           .then(() => {
@@ -227,7 +239,7 @@ const LaunchRequestHandler = {
             console.error(err, err.stack);
           });
 
-        speakOutput = `Hey ${profileName}, welcome to I Don\'t Know, I can recommend a place, add a member to your group, check your location, or exit. What would you like?`;
+        speakOutput = `Hey ${profileName}, welcome to Feed Me Now, I can recommend a place, add a member to your group, or say help for more options.`;
       }
       
       const repromptText = "Sorry, I didn't catch that.";
@@ -239,7 +251,7 @@ const LaunchRequestHandler = {
         .getResponse();
     } catch (error) {
       console.log('ERROR: ', error);
-      const speakOutput = `Welcome to I Don\'t Know, where I recommend places to eat. Huh, looks like I can't access the right permissions.  Open the companion app, choose our skill, and enable all.  Thanks!`;
+      const speakOutput = `Welcome to Feed Me Now, where I recommend places to eat. Huh, looks like I can't access the right permissions.  Open the companion app, choose our skill, and enable all permissions.`;
       const repromptText = "Sorry, I didn't catch that.";
       return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -258,7 +270,7 @@ const AddMemberIntentHandler = {
     );
   },
   handle(handlerInput) {
-    const speakOutput = 'What is the first name and phone number of the the person you want to add?';
+    const speakOutput = 'What\'s the first name and number of the the person you want to add?';
     const repromptText = 'Sorry, I didn\'t catch that.';
 
     return handlerInput.responseBuilder
@@ -286,7 +298,7 @@ const AddGroupMemberIntentHandler = {
 
     addMemberToGroup(handlerInput, name, phoneNumber, group, snsArn, members);
 
-    const speakOutput = `${name} added to your group. Can I recommend a place, add another to your group, get your location, or exit?`;
+    const speakOutput = `${name} added. Can I recommend a place, add another person, or help?`;
     const repromptText = 'Sorry, I didn\'t catch that.';
 
     return handlerInput.responseBuilder
@@ -305,7 +317,7 @@ const RemoveMemberIntentHandler = {
     );
   },
   handle(handlerInput) {
-    const speakOutput = 'What is the phone number of the the person you want to remove?';
+    const speakOutput = 'What\'s the phone number of the person to remove?';
     const repromptText = 'Sorry, I didn\'t catch that.';
 
     return handlerInput.responseBuilder
@@ -478,6 +490,7 @@ const RecommendationsHandler = {
       responseBuilder
     } = handlerInput;
     try {
+      //grab address from alexa device
       const { deviceId } = requestEnvelope.context.System.device;
       const deviceAddressServiceClient = serviceClientFactory.getDeviceAddressServiceClient();
       const address = await deviceAddressServiceClient.getFullAddress(deviceId);
@@ -493,7 +506,9 @@ const RecommendationsHandler = {
           address.city.toLowerCase() +
           ', ' +
           address.stateOrRegion.toLowerCase();
+        //api call to yelp
         let place = await searcher(location);
+        //populate response
         const response = `How about ${place}?`;
         const repromptText = "Sorry, I didn't catch that";
         return handlerInput.responseBuilder
@@ -551,7 +566,7 @@ const RecommendationsYesHandler = {
         console.error(err, err.stack);
       });
 
-    const speakOutput = `A message is being sent to the people in your group`; // change to variable / slot name
+    const speakOutput = `Great, a message is being sent to your group`; // change to variable / slot name
     return handlerInput.responseBuilder.speak(speakOutput).getResponse();
   }
 };
@@ -578,7 +593,7 @@ const HelpIntentHandler = {
   },
   handle(handlerInput) {
     const speakOutput =
-      'I can recommend a place, add you to a group, remove you from a group, check your device location, check your name, check your phone number, or exit. How can I help?';
+      'I can recommend a place, add a member to your group, remove a member, check your location, check your name, check your phone number, or exit. How can I help?';
     return handlerInput.responseBuilder
       .speak(speakOutput)
       .reprompt(speakOutput)
