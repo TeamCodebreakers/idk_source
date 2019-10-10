@@ -60,7 +60,7 @@ const LaunchRequestHandler = {
         speakOutput = `Welcome back, ${profileName}, can I recommend a place, add you to a group, check your location, or exit?`;
       } else {
         //   Creates SNS Topic
-        var createTopicPromise = new AWS.SNS({ apiVersion: '2010-03-31' })
+        var createTopicPromise = new AWS.SNS()
           .createTopic({ Name: 'TOPIC_NAME' })
           .promise();
 
@@ -80,7 +80,13 @@ const LaunchRequestHandler = {
               Endpoint: profileMobile,
               ReturnSubscriptionArn: true || false
             };
-            sns.subscribe(params);
+            sns.subscribe(params, function(err, data) {
+              if (err) {
+                console.log('ERR: ', err);
+              } else {
+                console.log('DATA: ', data);
+              }
+            });
             console.log('SUBSCRIBED!');
           })
           .catch(function(err) {
