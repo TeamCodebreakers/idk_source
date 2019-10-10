@@ -10,7 +10,7 @@
         },
         "interactionModel": {
           "en-US": {
-            "eTag": "edeff14a0ee6dfb4e5e7860d40d318ac"
+            "eTag": "c5dd15704fe07245c9fc9c2eb54e1025"
           }
         },
         "lambda": [
@@ -23,7 +23,7 @@
             "codeUri": "lambda/us-east-1_ask-custom-idk-default",
             "functionName": "ask-custom-idk-default",
             "handler": "index.handler",
-            "revisionId": "a1914b45-5e72-4502-8426-1a8b9dcdb669",
+            "revisionId": "b007703f-c38a-484e-8cdf-8a1859c45c87",
             "runtime": "nodejs8.10"
           }
         ]

@@ -73,6 +73,39 @@
                 ]
               },
               {
+                  "name": "RemoveMemberIntent",
+                  "slots": [],
+                  "samples": [
+                      "remove",
+                      "remove member",
+                      "remove a member",
+                      "remove a member from the group",
+                      "remove person",
+                      "remove a person",
+                      "remove a person from the group"
+                  ]
+              },
+              {
+                "name": "RemoveGroupMemberIntent",
+                "slots": [
+                    {
+                        "name": "phoneNumber",
+                        "type": "AMAZON.PhoneNumber"
+                    }
+                ],
+                "samples": [
+                    "remove {phoneNumber} from my group",
+                    "remove with {phoneNumber}",
+                    "remove with phone number {phoneNumber} from my group",
+                    "remove phone number {phoneNumber}",
+                    "remove at {phoneNumber} from my group",
+                    "remove at {phoneNumber}",
+                    "remove {phoneNumber} from my group",
+                    "remove {phoneNumber}",
+                    "{phoneNumber}"
+                ]
+              },
+              {
                   "name": "RecommendationsIntent",
                   "slots": [],
                   "samples": [
@@ -203,6 +236,22 @@
                             }
                         }
                     ]
+                },
+                {
+                    "name": "RemoveGroupMemberIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "phoneNumber",
+                            "type": "AMAZON.PhoneNumber",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.272790722780.1008280328923"
+                            }
+                        }
+                    ]
                 }
             ],
             "delegationStrategy": "ALWAYS"
@@ -223,6 +272,15 @@
                 {
                     "type": "PlainText",
                     "value": "What is the person's name?"
+                }
+            ]
+        },
+        {
+            "id": "Elicit.Slot.272790722780.1008280328923",
+            "variations": [
+                {
+                    "type": "PlainText",
+                    "value": "What phone number should I remove?"
                 }
             ]
         }

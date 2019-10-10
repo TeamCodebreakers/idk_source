@@ -33,6 +33,155 @@ let resultName;
 let resultAddress;
 let resultRating;
 
+/*
+Helper Functions
+*/
+const searcher = location => {
+  const client = yelp.client(API_KEY);
+  const searchRequest = {
+    location: location
+  };
+
+  return client
+    .search(searchRequest)
+    .then(response => {
+      let randomNum = randomizer(response.jsonBody.businesses.length - 1);
+      resultName = response.jsonBody.businesses[randomNum].name;
+      resultUrl = response.jsonBody.businesses[randomNum].url;
+      // Alexa cannot handle the '&' and needs conversion to 'and'
+      if (resultName.includes('&')) {
+        resultName = resultName.replace(/&/g, 'and');
+      }
+      return resultName;
+    })
+    .catch(e => {
+      console.log(e);
+    });
+};
+
+const randomizer = max => {
+  const randomNum = Math.floor(Math.random() * max);
+  return randomNum;
+};
+
+// Subscribe to the SNS
+const subscribe = async (snsArn, phoneNumber) => {
+  let subArn;
+  const sns = new AWS.SNS();
+    profileMobile = '+1' + phoneNumber;
+    const params = {
+      Protocol: 'sms',
+      TopicArn: snsArn,
+      Endpoint: profileMobile,
+      ReturnSubscriptionArn: true || false
+    };
+    await sns.subscribe(params, function(err, data) {
+      if (err) {
+        console.log('ERR: ', err);
+      } else {
+        subArn = data.SubscriptionArn;
+        console.log('DATA: ', data);
+        return subArn;
+      }
+    });
+};
+
+// Unsubscribe to the SNS
+const unsubscribe = (subArn) => {
+  const sns = new AWS.SNS();
+
+  var params = {
+    SubscriptionArn: subArn /* required */
+  };
+
+  sns.unsubscribe(params, function(err, data) {
+    if (err) {
+      console.log('UNSUBSCRIBE ERROR: ', err);
+    } else  {
+      console.log('UNSUBSCRIBE SUCCESS: ', data);
+    }
+  });
+};
+
+// Removes the member from the group
+const removeMemberFromGroup = async (handlerInput, phoneNumber, members) => {
+  const { serviceClientFactory } = handlerInput;
+  const attributesManager = handlerInput.attributesManager;
+
+  const upsServiceClient = serviceClientFactory.getUpsServiceClient();
+  const profileMobileObject = await upsServiceClient.getProfileMobileNumber();
+  let profileMobile = profileMobileObject.phoneNumber;
+
+  console.log('removeMemberFromGroup(): ', members);
+
+  if (members.length > 1) {
+    for( var i = 0; i < members.length; i++) { 
+
+      if (members[i].phoneNumber === phoneNumber && members[i] !== profileMobile) {
+        console.log('Removed: ', members[i]);
+        unsubscribe(members[i].subscriptionArn);
+        members.splice(i, 1);
+        break;
+      }
+  
+    }
+    
+    console.log('Returned groupAttribute:', sessionAttributes);
+    attributesManager.setPersistentAttributes(sessionAttributes);
+    attributesManager.savePersistentAttributes();
+
+    return `Removed member from your group. Can I recommend a place, add another to your group, get your location, or exit?`
+  } else {
+    console.log('Nothing to remove!');
+    return 'There are no members from your group to remove.'
+  }
+};
+
+//Sets the initial group for s3
+const setInitialGroup = (handlerInput, name, phoneNumber, snsArn) => {
+  const attributesManager = handlerInput.attributesManager;
+  let groupAttribute = {
+      "group": name,
+      "snsarn": snsArn,
+      "members": [
+        {
+          "name": name,
+          "phoneNumber": phoneNumber
+        }
+      ]
+  };
+  attributesManager.setPersistentAttributes(groupAttribute);
+  attributesManager.savePersistentAttributes();
+};
+
+//Updates the group with new members
+const addMemberToGroup = async (handlerInput, name, phoneNumber, group, snsArn, members) => {
+  const attributesManager = handlerInput.attributesManager;
+  let groupAttribute = {
+    "group": group,
+    "snsarn": snsArn,
+    "members": members
+  };
+
+  let subArn = await subscribe(snsArn, phoneNumber);
+
+  console.log('addMemberToGroup subArn:', subArn);
+
+  groupAttribute.members.push({
+    "name": name,
+    "phoneNumber": phoneNumber,
+    "subscriptionArn": subArn
+  });
+  
+  attributesManager.setPersistentAttributes(groupAttribute);
+  attributesManager.savePersistentAttributes();
+};
+
+
+/* 
+Main Skill: Handlers
+*/
+
 // Initial handler
 const LaunchRequestHandler = {
   canHandle(handlerInput) {
@@ -101,63 +250,6 @@ const LaunchRequestHandler = {
   }
 };
 
-// Subscribe to the SNS
-const subscribe = (snsArn, phoneNumber) => {
-  const sns = new AWS.SNS();
-    profileMobile = '+1' + phoneNumber;
-    const params = {
-      Protocol: 'sms',
-      TopicArn: snsArn,
-      Endpoint: profileMobile,
-      ReturnSubscriptionArn: true || false
-    };
-    sns.subscribe(params, function(err, data) {
-      if (err) {
-        console.log('ERR: ', err);
-      } else {
-        console.log('DATA: ', data);
-      }
-    });
-};
-
-//Sets the initial group for s3
-const setInitialGroup = (handlerInput, name, phoneNumber, snsArn) => {
-  const attributesManager = handlerInput.attributesManager;
-  let groupAttribute = {
-      "group": name,
-      "snsarn": snsArn,
-      "members": [
-        {
-          "name": name,
-          "phoneNumber": phoneNumber
-        }
-      ]
-  };
-  attributesManager.setPersistentAttributes(groupAttribute);
-  attributesManager.savePersistentAttributes();
-};
-
-//Updates the group with new members
-const addMemberToGroup = (handlerInput, name, phoneNumber, group, snsArn, members) => {
-  const attributesManager = handlerInput.attributesManager;
-  let groupAttribute = {
-    "group": group,
-    "snsarn": snsArn,
-    "members": members
-  };
-  groupAttribute.members.push({
-    "name": name,
-    "phoneNumber": phoneNumber
-  });
-
-  // Adds a new member to the SNS subscription
-  subscribe(snsArn, phoneNumber);
-  
-  attributesManager.setPersistentAttributes(groupAttribute);
-  attributesManager.savePersistentAttributes();
-};
-
-// add a member 
 const AddMemberIntentHandler = {
   canHandle(handlerInput) {
     return (
@@ -196,6 +288,48 @@ const AddGroupMemberIntentHandler = {
 
     const speakOutput = `${name} added to your group. Can I recommend a place, add another to your group, get your location, or exit?`;
     const repromptText = 'Sorry, I didn\'t catch that.';
+
+    return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt(repromptText)
+        .getResponse();
+  }
+};
+
+// Remove a member from the group prompt
+const RemoveMemberIntentHandler = {
+  canHandle(handlerInput) {
+    return (
+      handlerInput.requestEnvelope.request.type === 'IntentRequest' &&
+      handlerInput.requestEnvelope.request.intent.name === 'RemoveMemberIntent'
+    );
+  },
+  handle(handlerInput) {
+    const speakOutput = 'What is the phone number of the the person you want to remove?';
+    const repromptText = 'Sorry, I didn\'t catch that.';
+
+    return handlerInput.responseBuilder
+        .speak(speakOutput)
+        .reprompt(repromptText)
+        .getResponse();
+  }
+}
+
+// Remove a member from the group handler
+const RemoveGroupMemberIntentHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+        && Alexa.getIntentName(handlerInput.requestEnvelope) === 'RemoveGroupMemberIntent';
+  },
+  async handle(handlerInput) {
+    const phoneNumber = handlerInput.requestEnvelope.request.intent.slots.phoneNumber.value;
+
+    const attributesManager = handlerInput.attributesManager;
+    const sessionAttributes = await attributesManager.getSessionAttributes() || {};
+    const members = sessionAttributes.hasOwnProperty('members') ? sessionAttributes.members : 0;
+
+    const speakOutput = await removeMemberFromGroup(handlerInput, phoneNumber, members);
+    const repromptText = 'Sorry, I didn\'t catch that.  What is the phone number of the the person you want to remove?';
 
     return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -384,36 +518,6 @@ const RecommendationsHandler = {
   }
 };
 
-const searcher = location => {
-  const client = yelp.client(API_KEY);
-  const searchRequest = {
-    location: location
-  };
-
-  return client
-    .search(searchRequest)
-    .then(response => {
-      let randomNum = randomizer(response.jsonBody.businesses.length - 1);
-      resultName = response.jsonBody.businesses[randomNum].name;
-      resultAddress = response.jsonBody.businesses[randomNum].location.address1;
-      resultRating = response.jsonBody.businesses[randomNum].rating;
-      // Alexa cannot handle the '&' and needs conversion to 'and'
-      if (resultName.includes('&')) {
-        resultName = resultName.replace(/&/g, 'and');
-      }
-      return resultName;
-    })
-    .catch(e => {
-      console.log(e);
-    });
-};
-
-//make a recommendation
-const randomizer = max => {
-  const randomNum = Math.floor(Math.random() * max);
-  return randomNum;
-};
-
 // Recommendations Response Handler
 const RecommendationsYesHandler = {
   canHandle(handlerInput) {
@@ -588,6 +692,8 @@ exports.handler = Alexa.SkillBuilders.custom()
     RecommendationsNoHandler,
     AddMemberIntentHandler,
     AddGroupMemberIntentHandler,
+    RemoveMemberIntentHandler,
+    RemoveGroupMemberIntentHandler,
     HelpIntentHandler,
     CancelAndStopIntentHandler,
     SessionEndedRequestHandler,
