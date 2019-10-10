@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 //this version of the code is deployed through the ASK CLI
 //deployed to the skill named "idk"
-//held by account: team code breakers
+//held by account: teamcodebreakers
 
 const Alexa = require('ask-sdk-core');
 const AWS = require('aws-sdk');
@@ -40,9 +40,11 @@ const LaunchRequestHandler = {
   async handle(handlerInput) {
     const { serviceClientFactory, responseBuilder } = handlerInput;
     try {
+      //grab the profile name  and phone numbrer on the account
       const upsServiceClient = serviceClientFactory.getUpsServiceClient();
       const profileName = await upsServiceClient.getProfileName();
       const profileMobileObject = await upsServiceClient.getProfileMobileNumber();
+      //take the phone number from the object
       let profileMobile = profileMobileObject.phoneNumber;
 
       const attributesManager = handlerInput.attributesManager;
@@ -52,10 +54,6 @@ const LaunchRequestHandler = {
       const members = sessionAttributes.hasOwnProperty('members') ? sessionAttributes.members : 0;
 
       let speakOutput;
-
-      console.log('Group:', group);
-      console.log('Arn:', snsArn);
-      console.log('Members:', members);
       
       if (group) {
         speakOutput = `Welcome back, ${profileName}, can I recommend a place, add a member to your group, check your location, or exit?`;
@@ -69,17 +67,16 @@ const LaunchRequestHandler = {
         createTopicPromise
           .then(function(data) {
             SNSArn = data.TopicArn;
-            console.log('Topic ARN is ' + SNSArn);
             return subscribe(SNSArn, profileMobile);
           })
           .then(() => {
+            //   Creates the group in s3
             return setInitialGroup(handlerInput, profileName, profileMobile, SNSArn);
           })
           .catch(function(err) {
             console.error(err, err.stack);
           });
 
-        //   Creates the group in s3
         speakOutput = `Hey ${profileName}, welcome to I Don\'t Know, I can recommend a place, add a member to your group, check your location, or exit. What would you like?`;
       }
       
@@ -107,7 +104,6 @@ const LaunchRequestHandler = {
 const subscribe = (snsArn, phoneNumber) => {
   const sns = new AWS.SNS();
     profileMobile = '+1' + phoneNumber;
-    console.log('WE ARE SUBSCRIBING: ', phoneNumber);
     const params = {
       Protocol: 'sms',
       TopicArn: snsArn,
@@ -121,12 +117,10 @@ const subscribe = (snsArn, phoneNumber) => {
         console.log('DATA: ', data);
       }
     });
-    console.log('SUBSCRIBED!');
 };
 
 //Sets the initial group for s3
 const setInitialGroup = (handlerInput, name, phoneNumber, snsArn) => {
-  console.log('SNS ARN:', snsArn);
   const attributesManager = handlerInput.attributesManager;
   let groupAttribute = {
       "group": name,
@@ -138,7 +132,6 @@ const setInitialGroup = (handlerInput, name, phoneNumber, snsArn) => {
         }
       ]
   };
-  console.log("Group Attribute:", groupAttribute);
   attributesManager.setPersistentAttributes(groupAttribute);
   attributesManager.savePersistentAttributes();
 };
@@ -159,7 +152,6 @@ const addMemberToGroup = (handlerInput, name, phoneNumber, group, snsArn, member
   // Adds a new member to the SNS subscription
   subscribe(snsArn, phoneNumber);
   
-  console.log('Returned groupAttribute:', groupAttribute);
   attributesManager.setPersistentAttributes(groupAttribute);
   attributesManager.savePersistentAttributes();
 };
@@ -202,7 +194,6 @@ const AddGroupMemberIntentHandler = {
 
     const speakOutput = `${name} added to your group. Can I recommend a place, add another to your group, get your location, or exit?`;
     const repromptText = 'Sorry, I didn\'t catch that.';
-
 
     return handlerInput.responseBuilder
         .speak(speakOutput)
@@ -415,7 +406,6 @@ const searcher = location => {
 
 const randomizer = max => {
   const randomNum = Math.floor(Math.random() * max);
-  console.log('Random number:', randomNum);
   return randomNum;
 };
 
@@ -435,14 +425,14 @@ const RecommendationsYesHandler = {
       TopicArn: SNSArn
     };
     // Create promise and SNS service object
-    var publishTextPromise = new AWS.SNS({ apiVersion: '2010-03-31' })
+    var publishTextPromise = new AWS.SNS({ apiVersion: '2019-10-07' })
       .publish(params)
       .promise();
     // Handle promise's fulfilled/rejected states
     publishTextPromise
       .then(function(data) {
         console.log(
-          'Message ${params.Message} send sent to the topic ${params.TopicArn}'
+          `Message ${params.Message} send sent to the topic ${params.TopicArn}`
         );
         console.log('MessageID is ' + data.MessageId);
       })
