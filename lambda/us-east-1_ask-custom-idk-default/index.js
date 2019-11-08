@@ -2,6 +2,7 @@
 //this version of the code is deployed through the ASK CLI
 //deployed to the skill named "idk"
 //held by account: teamcodebreakers
+//hosted at: https://github.com/TeamCodebreakers/idk_source
 
 const Alexa = require('ask-sdk-core');
 const AWS = require('aws-sdk');
